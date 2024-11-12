@@ -10,6 +10,7 @@ import { bentoCardType, PATHS, templateShowCase } from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";
+import FitnessTemplateImage from '@/assets/tech-template-img.jpeg'
 
 export const landingPageNavBarLinks = [
   {
@@ -57,7 +58,7 @@ export const templateShowCaseList: templateShowCase[] = [
       "A dynamic and energetic template perfect for fitness and sports products, designed for equipment, apparel, and accessories.",
     name: "Fitness Store",
     used: 6,
-    image: "https://example.com/images/fitness-store.png",
+    image: FitnessTemplateImage,
   },
   {
     id: "5",

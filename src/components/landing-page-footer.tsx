@@ -2,23 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Instagram } from "lucide-react";
-
-import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { NewsLetterButton } from "./news-letter-btn";
+import { appConfig } from "@/lib/utils";
 
 export default function LandingPageFooter() {
   const [email, setEmail] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate newsletter subscription
-    console.log("Subscribing:", email);
-    toast({
-      title: "Thanks for subscribing!",
-      description: "You'll receive our next newsletter soon.",
-    });
-    setEmail("");
-  };
 
   return (
     <footer className="bg-[#0a0f1a] text-gray-300 py-16">
@@ -33,7 +22,7 @@ export default function LandingPageFooter() {
               weekly.
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="flex gap-3">
+          <form className="flex gap-3 w-full">
             <Input
               type="email"
               placeholder="Enter your email"
@@ -42,18 +31,20 @@ export default function LandingPageFooter() {
               className="flex-1 bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-purple-500"
               required
             />
-            <Button
-              type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6"
-            >
-              Subscribe
-            </Button>
+            <NewsLetterButton email={email} className="w-fit">
+              <Button
+                type="button"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6"
+              >
+                Subscribe
+              </Button>
+            </NewsLetterButton>
           </form>
         </div>
 
         <div className="mt-16 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-gray-400">
-            © 2024 Your Company, Inc. All rights reserved.
+            © 2024 {appConfig.name}, Inc. All rights reserved.
           </p>
           <div className="flex gap-8">
             <Link

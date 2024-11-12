@@ -10,6 +10,7 @@ import Marquee from "./ui/marquee";
 import { templateShowCaseList } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { NewsLetterButton } from "./news-letter-btn";
+import { useState } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -27,6 +28,7 @@ const stagger = {
 };
 
 export const LandingPageHeroSection = () => {
+  const [email, setEmail] = useState("");
   return (
     <motion.main
       className="relative"
@@ -46,7 +48,7 @@ export const LandingPageHeroSection = () => {
           </SquigglyUnderline>{" "}
         </motion.h1>
         <motion.div variants={fadeInUp}>
-          <Text className="text-gray-200 text-center max-w-5xl">
+          <Text className="text-gray-200 text-center max-w-5xl m-auto">
             Launch your online store effortlessly with AI-powered guidance—no
             coding needed. Start building a standout ecommerce presence today!
           </Text>
@@ -56,9 +58,13 @@ export const LandingPageHeroSection = () => {
           variants={fadeInUp}
         >
           <div className="relative p-1 w-[70%]">
-            <Input className="rounded-full h-[3rem] border-primary/80 bg-primary/5 w-full focus:ring-0 focus:border-hidden" />
+            <Input
+              value={email!}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded-full h-[3rem] border-primary/80 bg-primary/5 w-full focus:ring-0 focus:border-hidden"
+            />
 
-            <NewsLetterButton>
+            <NewsLetterButton email={email}>
               <Button
                 size="sm"
                 variant="shine"

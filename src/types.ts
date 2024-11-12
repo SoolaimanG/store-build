@@ -42,3 +42,11 @@ export type bentoCardType = {
 export type lucideIcons = React.ForwardRefExoticComponent<
   Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
 >;
+
+export type IJoinNewsLetterFrom = "input" | "modal";
+
+export interface apiResponse<T = any> {
+  status: string;
+  message: string;
+  data: T;
+}

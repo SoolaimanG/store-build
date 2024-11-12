@@ -11,34 +11,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Mail } from "lucide-react";
+import { cn, errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 
 export const NewsLetterButton: FC<{
   children: ReactNode;
   showModal?: boolean;
   email?: string;
-}> = ({ children, showModal = false, email: initialEmail = "" }) => {
+  className?: string;
+}> = ({ children, showModal = false, email: initialEmail = "", className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState(initialEmail);
+
+  console.log({ email, initialEmail });
 
   const onSubmit = () => {
     if (showModal) return setIsOpen(true);
     handleSubscribe();
   };
 
-  const handleSubscribe = () => {
-    toast({
-      title: "Welcome aboard!",
-      description:
-        "You've successfully joined our newsletter. Get ready for awesome updates!",
-      duration: 5000,
-    });
-    setIsOpen(false);
-    setEmail("");
+  const handleSubscribe = async () => {
+    try {
+      await storeBuilder.joinNewsLetter(
+        initialEmail || email,
+        showModal ? "modal" : "input"
+      );
+      toast({
+        title: "Welcome aboard!",
+        description:
+          "You've successfully joined our newsletter. Get ready for awesome updates!",
+        duration: 3500,
+      });
+    } catch (error) {
+      console.log(error);
+      const _error = errorMessageAndStatus(error);
+      toast({
+        title: _error.status,
+        description: _error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsOpen(false);
+      setEmail("");
+    }
   };
 
   return (
     <>
-      <div onClick={onSubmit} className="inline-block">
+      <div onClick={onSubmit} className={cn("inline-block w-full", className)}>
         {children}
       </div>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
