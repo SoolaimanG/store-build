@@ -11,6 +11,7 @@ import { templateShowCaseList } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { NewsLetterButton } from "./news-letter-btn";
 import { useState } from "react";
+import { appConfig } from "@/lib/utils";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -37,7 +38,13 @@ export const LandingPageHeroSection = () => {
       variants={stagger}
     >
       <LightingScene size="large" side="left" />
-      <div className="flex flex-col gap-5 mt-10 w-full">
+      <div className="flex flex-col items-center gap-5 mt-10 w-full">
+        <div className="flex items-center gap-3 border border-primary/50 cursor-pointer border-1 px-2 py-1 rounded-full">
+          <Sparkles size={23} className="bg-primary p-1 rounded-full" />
+          <Text className="text-gray-200">
+            Discover the all new {appConfig.name}
+          </Text>
+        </div>
         <motion.h1
           className="text-5xl text-center font-bold"
           variants={fadeInUp}
@@ -71,7 +78,7 @@ export const LandingPageHeroSection = () => {
                 className="rounded-full absolute right-2 top-2 mt-[0.1rem] gap-2"
               >
                 <Sparkles size={17} />
-                Generate
+                Join
               </Button>
             </NewsLetterButton>
           </div>
