@@ -10,6 +10,8 @@ import { bentoCardType, PATHS, templateShowCase } from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";
+import BeautyTemplateImage from "@/assets/beauty-template-img.jpeg";
+import FoodTemplateImage from "@/assets/food-store-template-image.png";
 
 export const landingPageNavBarLinks = [
   {
@@ -41,7 +43,7 @@ export const templateShowCaseList: templateShowCase[] = [
       "A vibrant and luxurious template for beauty products, ideal for skincare, makeup, and self-care brands.",
     name: "Beauty Store",
     used: 8,
-    image: "https://example.com/images/beauty-store.png",
+    image: BeautyTemplateImage,
   },
   {
     id: "3",
@@ -65,7 +67,7 @@ export const templateShowCaseList: templateShowCase[] = [
       "A rich, appetizing template for food items, suited for groceries, organic products, and specialty food items.",
     name: "Food Store",
     used: 10,
-    image: "https://example.com/images/food-store.png",
+    image: FoodTemplateImage,
   },
   {
     id: "6",
