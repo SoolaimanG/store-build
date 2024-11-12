@@ -3,8 +3,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { FadeInWhenVisible } from "./fade-in-when-visible";
 import { NewsLetterButton } from "./news-letter-btn";
+import { useState } from "react";
 
 export default function LandingPageNewsLetter() {
+  const [email, setEmail] = useState("");
   return (
     <div className="relative rounded-lg isolate overflow-hidden bg-gray-900 py-16 sm:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -26,12 +28,14 @@ export default function LandingPageNewsLetter() {
                   id="email-address"
                   name="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="Enter your email"
                   autoComplete="email"
                   className="text-white placeholder:text-white"
                 />
-                <NewsLetterButton>
+                <NewsLetterButton email={email}>
                   <Button type="submit" variant="gooeyRight">
                     Subscribe
                   </Button>

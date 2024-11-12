@@ -10,6 +10,8 @@ import Marquee from "./ui/marquee";
 import { templateShowCaseList } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { NewsLetterButton } from "./news-letter-btn";
+import { useState } from "react";
+import { appConfig } from "@/lib/utils";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -27,6 +29,7 @@ const stagger = {
 };
 
 export const LandingPageHeroSection = () => {
+  const [email, setEmail] = useState("");
   return (
     <motion.main
       className="relative"
@@ -35,7 +38,13 @@ export const LandingPageHeroSection = () => {
       variants={stagger}
     >
       <LightingScene size="large" side="left" />
-      <div className="flex flex-col gap-5 mt-10 w-full">
+      <div className="flex flex-col items-center gap-5 mt-10 w-full">
+        <div className="flex items-center gap-3 border border-primary/50 cursor-pointer border-1 px-2 py-1 rounded-full">
+          <Sparkles size={23} className="bg-primary p-1 rounded-full" />
+          <Text className="text-gray-200">
+            Discover the all new {appConfig.name}
+          </Text>
+        </div>
         <motion.h1
           className="text-5xl text-center font-bold"
           variants={fadeInUp}
@@ -46,7 +55,7 @@ export const LandingPageHeroSection = () => {
           </SquigglyUnderline>{" "}
         </motion.h1>
         <motion.div variants={fadeInUp}>
-          <Text className="text-gray-200 text-center max-w-5xl">
+          <Text className="text-gray-200 text-center max-w-5xl m-auto">
             Launch your online store effortlessly with AI-powered guidance—no
             coding needed. Start building a standout ecommerce presence today!
           </Text>
@@ -56,16 +65,20 @@ export const LandingPageHeroSection = () => {
           variants={fadeInUp}
         >
           <div className="relative p-1 w-[70%]">
-            <Input className="rounded-full h-[3rem] border-primary/80 bg-primary/5 w-full focus:ring-0 focus:border-hidden" />
+            <Input
+              value={email!}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded-full h-[3rem] border-primary/80 bg-primary/5 w-full focus:ring-0 focus:border-hidden"
+            />
 
-            <NewsLetterButton>
+            <NewsLetterButton email={email}>
               <Button
                 size="sm"
                 variant="shine"
                 className="rounded-full absolute right-2 top-2 mt-[0.1rem] gap-2"
               >
                 <Sparkles size={17} />
-                Generate
+                Join
               </Button>
             </NewsLetterButton>
           </div>

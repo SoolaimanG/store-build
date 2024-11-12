@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { tiers } from "@/constants";
 import { FadeInWhenVisible } from "./fade-in-when-visible";
+import { NewsLetterButton } from "./news-letter-btn";
 
 export default function LandingPagePricing() {
   return (
@@ -103,6 +104,7 @@ export default function LandingPagePricing() {
                   </li>
                 ))}
               </ul>
+              <NewsLetterButton showModal>
               <Button asChild>
                 <Link
                   to={tier.href}
@@ -114,6 +116,7 @@ export default function LandingPagePricing() {
                   Get started today
                 </Link>
               </Button>
+              </NewsLetterButton>
             </div>
           </FadeInWhenVisible>
         ))}
