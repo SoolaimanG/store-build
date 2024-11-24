@@ -10,12 +10,12 @@ import { bentoCardType, PATHS, templateShowCase } from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";
-<<<<<<< HEAD
 import BeautyTemplateImage from "@/assets/beauty-template-img.jpeg";
 import FoodTemplateImage from "@/assets/food-store-template-image.png";
-=======
-import FitnessTemplateImage from '@/assets/tech-template-img.jpeg'
->>>>>>> 19da007989db181a78795164db3f80b6552d3e1d
+import FitnessTemplateImage from "@/assets/tech-template-img.jpeg";
+import { z } from "zod";
+import { Home, Users, Settings, ShoppingBag, Store } from "lucide-react";
+import { appConfig } from "./lib/utils";
 
 export const landingPageNavBarLinks = [
   {
@@ -28,7 +28,63 @@ export const landingPageNavBarLinks = [
   },
   {
     name: "Pricing",
-    path: PATHS.PRICING,
+    path: "#pricing",
+  },
+  {
+    name: "Dashboard",
+    path: PATHS.DASHBOARD,
+  },
+];
+
+export const dashboardPages = [
+  {
+    name: "Insights",
+    path: "",
+  },
+  {
+    name: "Inventories",
+    path: "",
+  },
+  {
+    name: "Orders",
+    path: "",
+  },
+  {
+    name: "Store Front",
+    path: "",
+  },
+  {
+    name: "Settings",
+    path: "",
+  },
+];
+
+export const sidebarItems = [
+  { icon: Home, label: "Dashboard", path: PATHS.DASHBOARD },
+  {
+    icon: ShoppingBag,
+    label: "Products",
+    path: PATHS.STORE_PRODUCTS,
+  },
+  {
+    icon: DollarSign,
+    label: "Orders",
+    path: PATHS.STORE_ORDERS,
+  },
+  {
+    icon: Users,
+    label: "Customers",
+    path: PATHS.STORE_CUSTOMERS,
+  },
+  {
+    icon: Store,
+    label: "Storefront",
+    path: PATHS.STORE_FRONT,
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    path: PATHS.STORE_SETTINGS,
   },
 ];
 
@@ -173,7 +229,7 @@ export const tiers = [
     name: "Pro",
     id: "tier-pro",
     href: "#",
-    priceMonthly: "₦500",
+    priceMonthly: `₦${appConfig.premiumAmount}`,
     description:
       "Unlock full potential with advanced features and customization.",
     features: [
@@ -186,3 +242,84 @@ export const tiers = [
     featured: true,
   },
 ];
+
+export const pageTransition = {
+  type: "tween",
+  ease: "anticipate",
+  duration: 0.5,
+};
+
+export const pageVariants = {
+  initial: { opacity: 0, x: 50 },
+  in: { opacity: 1, x: 0 },
+  out: { opacity: 0, x: -50 },
+};
+
+export const formAnimation = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay: 0.4 },
+};
+
+export const buttonAnimation = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay: 0.6 },
+};
+
+export const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+export const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+    },
+  },
+};
+
+export const floatingIcons = [
+  { icon: "👚", className: "-left-16 top-0" },
+  { icon: "💍", className: "-right-8 md:-right-[5rem] top-6" },
+  { icon: "🏋️", className: "-left-8 md:-left-[5rem] -bottom-14" },
+  { icon: "💻", className: "right-4 md:-right-[5rem] -bottom-[5.5rem]" },
+];
+
+// Schemas
+export const emailSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+
+export const storeNameSchema = z.object({
+  storeName: z.string().min(1, { message: "Store name is required" }),
+});
+
+export const productTypeSchema = z.object({
+  productType: z.string().min(1, { message: "Please select a product type" }),
+});
+
+// Animation Variant
+export const buttonVariants = (scale = 1.05, tabScale = 0.95) => {
+  return {
+    hover: {
+      scale,
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 10,
+      },
+    },
+    tap: { scale: tabScale },
+  };
+};

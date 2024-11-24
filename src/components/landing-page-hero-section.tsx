@@ -5,13 +5,15 @@ import { SquigglyUnderline } from "./squiggly-underline";
 import { Text } from "./text";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Marquee from "./ui/marquee";
 import { templateShowCaseList } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { NewsLetterButton } from "./news-letter-btn";
 import { useState } from "react";
 import { appConfig } from "@/lib/utils";
+import { useAuthentication } from "@/hooks/use-authentication";
+import { PATHS } from "@/types";
+import queryString from "query-string";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -29,7 +31,23 @@ const stagger = {
 };
 
 export const LandingPageHeroSection = () => {
-  const [email, setEmail] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const { isAuthenticated } = useAuthentication();
+  const n = useNavigate();
+
+  const onGenerate = () => {
+    if (!prompt) return;
+
+    if (!isAuthenticated) {
+      const param = queryString.parse(location.search);
+      const q = queryString.stringify({ ...param, useAi: prompt });
+      n(`${PATHS.SIGNIN}?callbackUrl=${location.href}?${q}`);
+      return;
+    }
+
+    n(PATHS.DASHBOARD);
+  };
+
   return (
     <motion.main
       className="relative"
@@ -66,21 +84,20 @@ export const LandingPageHeroSection = () => {
         >
           <div className="relative p-1 w-[70%]">
             <Input
-              value={email!}
-              onChange={(e) => setEmail(e.target.value)}
+              value={prompt!}
+              onChange={(e) => setPrompt(e.target.value)}
               className="rounded-full h-[3rem] border-primary/80 bg-primary/5 w-full focus:ring-0 focus:border-hidden"
             />
 
-            <NewsLetterButton email={email}>
-              <Button
-                size="sm"
-                variant="shine"
-                className="rounded-full absolute right-2 top-2 mt-[0.1rem] gap-2"
-              >
-                <Sparkles size={17} />
-                Join
-              </Button>
-            </NewsLetterButton>
+            <Button
+              size="sm"
+              variant="shine"
+              onClick={onGenerate}
+              className="rounded-full absolute right-2 top-2 mt-[0.1rem] gap-2"
+            >
+              <Sparkles size={17} />
+              Generate
+            </Button>
           </div>
         </motion.div>
         {/* Representation of store components */}
@@ -100,37 +117,41 @@ export const LandingPageHeroSection = () => {
               </Button>
             </motion.div>
           </nav>
-          <Marquee pauseOnHover className="mt-6">
-            {templateShowCaseList.map((template, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link
-                  to={"#"}
-                  className="w-[35rem] h-fit block p-7 bg-slate-800 rounded-xl"
+          <div>
+            <Marquee pauseOnHover className="mt-6">
+              {templateShowCaseList.map((template, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <Avatar className="rounded-md w-full h-[23rem]">
-                    <AvatarImage
-                      src={template.image}
-                      alt={template.name}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="rounded-md">
-                      {template.name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="mt-2">
-                    <h3 className="text-xl font-semibold">{template.name}</h3>
-                    <Text className="line-clamp-1 text-gray-400">
-                      {template.descriptions}
-                    </Text>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </Marquee>
+                  <Link
+                    to={"#"}
+                    className="w-[35rem] h-fit block p-7 bg-slate-800 rounded-xl"
+                  >
+                    <Avatar className="rounded-md w-full h-[23rem]">
+                      <AvatarImage
+                        src={template.image}
+                        alt={template.name}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="rounded-md">
+                        {template.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="mt-2">
+                      <h3 className="text-xl font-semibold">{template.name}</h3>
+                      <Text className="line-clamp-1 text-gray-400">
+                        {template.descriptions}
+                      </Text>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </Marquee>
+            <div className="pointer-events-none absolute z-30 inset-y-0 -left-10 md:-left-[10rem] w-1/3 bg-gradient-to-r from-white dark:from-background" />
+            <div className="pointer-events-none absolute inset-y-0 -right-10 md:-right-[10rem] w-1/3 bg-gradient-to-l from-white dark:from-background" />
+          </div>
         </motion.div>
       </div>
     </motion.main>

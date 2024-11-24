@@ -15,9 +15,13 @@ import {
 } from "./ui/sheet";
 import { Menu, SeparatorHorizontal } from "lucide-react";
 import { Logo } from "./logo";
-import { NewsLetterButton } from "./news-letter-btn";
+import { PATHS } from "@/types";
+import { useAuthentication } from "@/hooks/use-authentication";
+import { storeBuilder } from "@/lib/utils";
 
 const MobileNavBar = () => {
+  const { isAuthenticated } = useAuthentication();
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -62,27 +66,41 @@ const MobileNavBar = () => {
             </motion.div>
           ))}
         </nav>
-        <SheetFooter className="mt-auto mb-8 flex-row items-stretch justify-center gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.5 }}
-          >
-            <Link to="/signin" className="flex items-center gap-2">
-              Sign In
-            </Link>
-          </motion.div>
-          <SeparatorHorizontal />
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.6 }}
-          >
-            <Link to="/signup" className="flex items-center gap-2">
-              Sign Up
-            </Link>
-          </motion.div>
-        </SheetFooter>
+        {!isAuthenticated && (
+          <SheetFooter className="mt-auto mb-8 flex-row items-stretch justify-center gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.5 }}
+            >
+              <Link to={PATHS.SIGNIN} className="flex items-center gap-2">
+                Sign In
+              </Link>
+            </motion.div>
+            <SeparatorHorizontal />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.6 }}
+            >
+              <Link to={PATHS.SIGNUP} className="flex items-center gap-2">
+                Sign Up
+              </Link>
+            </motion.div>
+          </SheetFooter>
+        )}
+        {isAuthenticated && (
+          <SheetFooter className="mt-auto mb-8 flex-row cursor-pointer hover:text-primary items-stretch justify-center gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.6 }}
+              onClick={() => storeBuilder.signOut()}
+            >
+              Sign Out
+            </motion.div>
+          </SheetFooter>
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -124,10 +142,10 @@ export const LandingPageNavBar: FC = () => {
         transition={{ duration: 0.5, delay: 0.4 }}
         className="flex items-center gap-2"
       >
-        <NewsLetterButton showModal>
-          {" "}
-          <Button variant="outline">Let's do it</Button>
-        </NewsLetterButton>
+        {" "}
+        <Button asChild variant="outline">
+          <Link to={PATHS.SIGNUP}>Let's do it</Link>
+        </Button>
         <AnimatePresence>
           {isMobile && (
             <motion.div

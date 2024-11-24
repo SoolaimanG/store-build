@@ -5,7 +5,7 @@ export const Text: FC<
   React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>
 > = ({ children, className, ...props }) => {
   return (
-    <div className={cn("text-sm text-muted-foreground", className)} {...props}>
+    <div className={cn("text-sm text-foreground/80", className)} {...props}>
       {children}
     </div>
   );
