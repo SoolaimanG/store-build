@@ -8,7 +8,7 @@ export const useToastError = (error: any) => {
   useEffect(() => {
     if (error) {
       toast({
-        title: `Something went wrong: ${_error.status}`,
+        title: `Something went wrong: ${_error.status || "SERVER"}`,
         description: _error.message,
         variant: "destructive",
       });

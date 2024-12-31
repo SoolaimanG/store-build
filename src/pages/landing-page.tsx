@@ -8,7 +8,7 @@ import { Section } from "@/components/section";
 
 const LandingPage = () => {
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <LandingPageNavBar />
       <Section>
         <LandingPageHeroSection />

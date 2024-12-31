@@ -6,6 +6,13 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
   user: null,
   isPaymentConfirmed: false,
   openAddPaymentDetailsModal: false,
+  selectedProducts: [],
+  onProductSelect(products) {
+    set((state) => ({
+      ...state,
+      selectedProducts: products,
+    }));
+  },
   setIsPaymentDetailsConfirmed: () => {
     set((state) => ({
       ...state,
@@ -36,6 +43,14 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
     set((state) => ({
       ...state,
       user: { ...props, ...(state.user as IUser) },
+    }));
+  },
+  removeProduct(productId) {
+    set((state) => ({
+      ...state,
+      selectedProducts: state.selectedProducts.filter(
+        (product) => product._id !== productId
+      ),
     }));
   },
 }));

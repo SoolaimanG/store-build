@@ -6,7 +6,7 @@ export const Section: FC<
 > = ({ children, className, ...props }) => {
   return (
     <section
-      className={cn("container mx-auto px-4 py-6", className)}
+      className={cn("w-full md:max-w-6xl mx-auto px-4 py-6", className)}
       {...props}
     >
       {children}

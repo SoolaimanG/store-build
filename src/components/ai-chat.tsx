@@ -91,7 +91,7 @@ export function AIChat({ children }: { children: ReactNode }) {
 
   const addMention = (mention: Mention) => {
     setMentions((prev) => [...prev, mention]);
-    setInput((prev) => prev.slice(0, -1)); // Remove the '@' character
+    setInput((prev) => prev.slice(0, -1));
     setShowMentions(false);
     inputRef.current?.focus();
   };

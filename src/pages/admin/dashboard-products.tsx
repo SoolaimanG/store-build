@@ -1,312 +1,276 @@
 import * as React from "react";
-import { Search, Plus, Grid2X2, LayoutList } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FilterIcon,
+  Package2,
+  Package2Icon,
+  SearchIcon,
+  XIcon,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AnimatePresence, motion } from "framer-motion";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { useQuery } from "@tanstack/react-query";
+import { generateRandomString, storeBuilder } from "@/lib/utils";
+import { useStoreBuildState } from "@/store";
+import { PATHS } from "@/types";
+import { useToastError } from "@/hooks/use-toast-error";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import ProductPageLoader from "@/components/loaders/product-page-loader";
 import queryString from "query-string";
-import { useLocation, useNavigate } from "react-router-dom";
-import { addQueryParameter, formatAmountToNaira } from "@/lib/utils";
-import { Img } from "react-image";
+import { ProductFiltersForm } from "@/components/product-filter-form";
+import { ProductStats } from "@/components/product-stats";
+import { Input } from "@/components/ui/input";
+import { ProductTable } from "@/components/product-table";
+import { EmptyProductState } from "@/components/empty";
+import { PaginationFooter } from "@/components/pagination-footer";
 
-interface Product {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  stock: number;
-  maxStock: number;
-  active: boolean;
-}
-
-const products: Product[] = [
-  {
-    id: "O8175M47",
-    name: "Oversized Heritage Washed T-Shirt",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 64.15,
-    stock: 1000,
-    maxStock: 1000,
-    active: true,
-  },
-  {
-    id: "O7642M5",
-    name: "Sweatshirt With Hood",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 74.34,
-    stock: 583,
-    maxStock: 600,
-    active: true,
-  },
-  {
-    id: "O6473M8",
-    name: "Soft and Light Break",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 54.21,
-    stock: 703,
-    maxStock: 1000,
-    active: true,
-  },
-  {
-    id: "O8175M45",
-    name: "Bot Chelsea With for Protection",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 30.43,
-    stock: 922,
-    maxStock: 1000,
-    active: false,
-  },
-  {
-    id: "O5261WS",
-    name: "Shirt With Patterned Design",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 84.24,
-    stock: 738,
-    maxStock: 800,
-    active: false,
-  },
-  {
-    id: "O8542WS",
-    name: "Oxford Shirt",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 64.15,
-    stock: 196,
-    maxStock: 300,
-    active: false,
-  },
-  {
-    id: "O9120M46",
-    name: "Metallic Layer Shirt",
-    image: "/placeholder.svg?height=100&width=100",
-    price: 84.15,
-    stock: 877,
-    maxStock: 900,
-    active: false,
-  },
-];
-
-export default function DashboardProducts() {
-  const location = useLocation();
-  const n = useNavigate();
-  const { view = "list" } = queryString.parse(location.search) as {
-    view: "grid" | "list";
-  };
-  const [searchQuery, setSearchQuery] = React.useState("");
-
-  const onViewChange = (view: "grid" | "list") => {
-    n(`?${addQueryParameter("view", view)}`);
-  };
-
-  return (
-    <div className="flex flex-col gap-8 p-3">
-      <motion.div
-        className="flex items-center gap-3 flex-wrap"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center border-[1.9px] rounded-full border-slate-600">
-          <Button
-            variant={view === "list" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => onViewChange("list")}
-            className="rounded-full"
-          >
-            <LayoutList className="h-4 w-4" />
-            <span className="sr-only">List view</span>
-          </Button>
-          <Button
-            variant={view === "grid" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => onViewChange("grid")}
-            className="rounded-full"
-          >
-            <Grid2X2 className="h-4 w-4" />
-            <span className="sr-only">Grid view</span>
-          </Button>
-        </div>
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products..."
-            className="pl-8 border-[1.9px] border-slate-600 rounded-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[180px] border-[1.9px] border-slate-600 rounded-full">
-            <SelectValue placeholder="Show: All Products" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Show: All Products</SelectItem>
-            <SelectItem value="active">Show: Active Products</SelectItem>
-            <SelectItem value="inactive">Show: Inactive Products</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="default">
-          <SelectTrigger className="w-[180px] border-[1.9px] border-slate-600 rounded-full">
-            <SelectValue placeholder="Sort by: Default" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Sort by: Default</SelectItem>
-            <SelectItem value="price-asc">
-              Sort by: Price (Low to High)
-            </SelectItem>
-            <SelectItem value="price-desc">
-              Sort by: Price (High to Low)
-            </SelectItem>
-            <SelectItem value="stock">Sort by: Stock Level</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button className="gap-2 rounded-full">
-          <Plus className="h-4 w-4" /> Add new product
-        </Button>
-      </motion.div>
-      <motion.div
-        className="grid gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <div className="flex items-center gap-4">
-          <Select defaultValue="all">
-            <SelectTrigger className="border-[1.9px] border-slate-600 rounded-md">
-              <SelectValue placeholder="Category: All Collection" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Category: All Collection</SelectItem>
-              <SelectItem value="shirts">Category: Shirts</SelectItem>
-              <SelectItem value="pants">Category: Pants</SelectItem>
-              <SelectItem value="accessories">Category: Accessories</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="50-100">
-            <SelectTrigger className="border-[1.9px] border-slate-600 rounded-md">
-              <SelectValue placeholder="Price: $50 - $100" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0-50">Price: $0 - $50</SelectItem>
-              <SelectItem value="50-100">Price: $50 - $100</SelectItem>
-              <SelectItem value="100-150">Price: $100 - $150</SelectItem>
-              <SelectItem value="150+">Price: $150+</SelectItem>
-            </SelectContent>
-          </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="border-[1.9px] rounded-md" variant="outline">
-                All Status
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Active</DropdownMenuItem>
-              <DropdownMenuItem>No Active</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Select defaultValue="all">
-            <SelectTrigger className="border-[1.9px] border-slate-600 rounded-md">
-              <SelectValue placeholder="Store: All Collection" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Store: All Collection</SelectItem>
-              <SelectItem value="online">Store: Online</SelectItem>
-              <SelectItem value="retail">Store: Retail</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="rounded-lg border bg-card">
-          <AnimatePresence mode="wait">
-            <div className="grid">
-              {products.map((product, index) => (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  key={product.id}
-                  className={`grid grid-cols-1 gap-4 cursor-pointer p-4 sm:grid-cols-2 md:grid-cols-[auto_1fr_100px_100px_80px] md:items-center ${
-                    index !== products.length - 1 ? "border-b" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <Img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-12 w-12 rounded-lg border object-cover"
-                    />
-                    <div className="grid gap-1">
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        ID: {product.id}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between sm:flex-col sm:items-end md:flex-row md:justify-between">
-                    <div className="flex items-center gap-1">
-                      <div className="font-medium md:hidden">Price:</div>
-                      <div className="font-medium">
-                        {formatAmountToNaira(product.price)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 md:hidden">
-                      <div className="font-medium">Status:</div>
-                      <Switch checked={product.active} />
-                    </div>
-                  </div>
-                  <div className="hidden md:block" />
-                  <div className="flex items-center gap-2">
-                    <div className="font-medium md:hidden">Stock:</div>
-                    <div className="text-sm">{product.stock}</div>
-                    <div className="flex-1">
-                      <div className="h-2 w-full rounded-full bg-muted">
-                        <StockProgress
-                          maxStock={product.maxStock}
-                          stock={product.stock}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="hidden md:block">
-                    <Switch checked={product.active} />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </AnimatePresence>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-const StockProgress: React.FC<{ maxStock: number; stock: number }> = (
-  product
-) => {
-  return (
-    <div
-      className={`h-[6px] rounded-full ${
-        product.stock / product.maxStock > 0.6
-          ? "bg-green-500"
-          : product.stock / product.maxStock > 0.3
-          ? "bg-yellow-500"
-          : "bg-red-500"
-      }`}
-      style={{
-        width: `${(product.stock / product.maxStock) * 100}%`,
-      }}
-    />
-  );
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+  transition: { duration: 0.2 },
 };
+
+export default function ProductsPage() {
+  const { user } = useStoreBuildState();
+  const [showFilters, setShowFilters] = React.useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const priceRange = { min: 0, max: 1000 };
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const queryParams = queryString.parse(location.search);
+
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["products", user?.storeId, location.search],
+    queryFn: () =>
+      storeBuilder.getProducts(user?.storeId || "", {
+        q: queryParams.q as string | undefined,
+        sort: queryParams.sort as "default",
+        category: queryParams.category as string,
+        minPrice: queryParams.minPrice
+          ? parseFloat(queryParams.minPrice as string)
+          : undefined,
+        maxPrice: queryParams.maxPrice
+          ? parseFloat(queryParams.maxPrice as string)
+          : undefined,
+        size: queryParams.size
+          ? parseInt(queryParams.size as string, 10)
+          : undefined,
+      }),
+    enabled: Boolean(user?.storeId),
+  });
+
+  useToastError(error);
+
+  const products = data?.data?.products || [];
+
+  if (isLoading) return <ProductPageLoader />;
+
+  const updateQueryParams = (newParams: Record<string, any>) => {
+    const currentParams = queryString.parse(location.search);
+    const updatedParams = { ...currentParams, ...newParams };
+    Object.keys(updatedParams).forEach(
+      (key) => updatedParams[key] === undefined && delete updatedParams[key]
+    );
+    const newSearch = queryString.stringify(updatedParams);
+    navigate(`${location.pathname}?${newSearch}`);
+  };
+
+  const max =
+    data?.data?.products?.reduce((max, product) => {
+      return product.price.default > max ? product.price.default : max;
+    }, Number.NEGATIVE_INFINITY) || 20000;
+
+  const Filters = () => (
+    <motion.div
+      className="flex flex-col gap-4"
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={fadeInUp}
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Filters</h3>
+        {!isDesktop && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowFilters(false)}
+          >
+            <XIcon className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      <ProductFiltersForm
+        onSubmit={(values) => {
+          updateQueryParams(values);
+          setShowFilters(false);
+        }}
+        initialValues={{
+          q: (queryParams.q as string) || "",
+          sort: queryParams.sort as
+            | "default"
+            | "stock-level"
+            | "low-to-high"
+            | "high-to-low"
+            | undefined,
+          category: (queryParams.category as string) || "all",
+          minPrice: queryParams.minPrice
+            ? parseFloat(queryParams.minPrice as string)
+            : undefined,
+          maxPrice: queryParams.maxPrice
+            ? parseFloat(queryParams.maxPrice as string)
+            : undefined,
+          size: queryParams.size
+            ? parseInt(queryParams.size as string, 10)
+            : undefined,
+        }}
+        priceRange={{ ...priceRange, max }}
+      />
+    </motion.div>
+  );
+
+  const FilterDialog = () => {
+    if (isDesktop) {
+      return (
+        <Dialog open={showFilters} onOpenChange={setShowFilters}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogTitle className=" sr-only">Product Filters</DialogTitle>
+            <AnimatePresence>{showFilters && <Filters />}</AnimatePresence>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    return (
+      <Drawer open={showFilters} onOpenChange={setShowFilters}>
+        <DrawerContent className="py-3">
+          <DrawerTitle className="sr-only">Product Filters</DrawerTitle>
+          <div className="p-4">
+            <AnimatePresence>{showFilters && <Filters />}</AnimatePresence>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  };
+
+  return (
+    <motion.div
+      className="flex container mx-auto flex-col gap-4 p-4 md:gap-8 md:p-8"
+      initial="initial"
+      animate="animate"
+      variants={{
+        initial: { opacity: 0 },
+        animate: { opacity: 1, transition: { staggerChildren: 0.1 } },
+      }}
+    >
+      <motion.div
+        className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+        variants={fadeInUp}
+      >
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Products
+          </h1>
+          <p className="text-sm text-muted-foreground md:text-base">
+            Manage your product inventory and track stock levels
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(true)}
+            >
+              <FilterIcon className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link to={PATHS.STORE_PRODUCTS + generateRandomString(8) + "#new"}>
+              <Button size="sm">
+                <Package2Icon className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeInUp}>
+        <ProductStats
+          totalProducts={data?.data.totalProducts || 0}
+          activeProducts={products?.filter((p) => p.isActive).length || 0}
+          digitalProducts={data?.data.digitalProducts || 0}
+          lowStockProducts={data?.data.lowStockProducts || 0}
+          outOfStockProducts={data?.data.outOfStockProducts || 0}
+        />
+      </motion.div>
+
+      <FilterDialog />
+
+      <motion.div variants={fadeInUp}>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col gap-4">
+              <motion.div
+                className="flex w-full items-center gap-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <SearchIcon className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={(queryParams.q as string) || ""}
+                  onChange={(e) => {
+                    updateQueryParams({ q: e.target.value || undefined });
+                  }}
+                  className="w-full"
+                />
+              </motion.div>
+
+              <motion.div
+                className="overflow-x-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {!!products.length ? (
+                  <ProductTable
+                    products={products}
+                    onSort={(sort) => updateQueryParams({ sort })}
+                    currentSort={queryParams.sort as "low-to-high"}
+                  />
+                ) : (
+                  <EmptyProductState>
+                    <Link
+                      to={
+                        PATHS.STORE_PRODUCTS + generateRandomString(8) + "#new"
+                      }
+                    >
+                      <Button variant="ringHover">
+                        <Package2 className="mr-2 h-4 w-4" />
+                        Add Your First Product
+                      </Button>
+                    </Link>
+                  </EmptyProductState>
+                )}
+              </motion.div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+      <PaginationFooter
+        maxPagination={Math.floor(data?.data.totalProducts || 10 / 10)}
+      />
+    </motion.div>
+  );
+}

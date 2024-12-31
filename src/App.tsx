@@ -12,7 +12,13 @@ import SignIn from "./pages/auth/signIn";
 import DashboardProvider from "./components/dashboard-provider";
 import Dashboard from "./pages/admin/dashboard";
 import DashboardProducts from "./pages/admin/dashboard-products";
-import { DashboardCustomers } from "./pages/admin/dashboard-customers";
+import DashboardOrders from "./pages/admin/dashboard-order";
+import DashboardOrderDetails from "./pages/admin/dashboard-order-details";
+import DashboardCustomers from "./pages/admin/dashboard-customers";
+import DashboardStoreFront from "./pages/admin/dashboard-store-front";
+import DashboardIntegrations from "./pages/admin/dashboard-integrations";
+import DashboardCreateNewProduct from "./pages/admin/dashboard-create-new-product";
+import DashboardCreateOrder from "./pages/admin/dashboard-create-order";
 
 NProgress.configure({ showSpinner: false });
 
@@ -69,6 +75,54 @@ function App() {
                 element={
                   <DashboardProvider>
                     <DashboardCustomers />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_ORDERS}
+                element={
+                  <DashboardProvider>
+                    <DashboardOrders />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_ORDERS + ":id"}
+                element={
+                  <DashboardProvider>
+                    <DashboardOrderDetails />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_FRONT}
+                element={
+                  <DashboardProvider>
+                    <DashboardStoreFront />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_INTEGRATIONS}
+                element={
+                  <DashboardProvider>
+                    <DashboardIntegrations />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_PRODUCTS + ":id"}
+                element={
+                  <DashboardProvider>
+                    <DashboardCreateNewProduct />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_ORDERS + "new/" + ":id"}
+                element={
+                  <DashboardProvider>
+                    <DashboardCreateOrder />
                   </DashboardProvider>
                 }
               />

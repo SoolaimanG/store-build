@@ -3,15 +3,27 @@ import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import {
   apiResponse,
+  getProductsTypes,
+  ICategory,
+  IChatBotIntegration,
   ICheckFor,
+  IDashboardMetrics,
+  IDeliveryIntegration,
+  IIntegrationType,
   IJoinNewsLetterFrom,
+  IOrder,
+  IOrderStatus,
   IOTPFor,
+  IPaymentIntegration,
+  IProduct,
+  IProductAnalytics,
   IProductTypes,
   IUser,
 } from "@/types";
 import qs from "query-string";
 import Cookie from "js-cookie";
 import queryString from "query-string";
+import { toast } from "@/hooks/use-toast";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,6 +59,16 @@ export class StoreBuild {
 
   removeSessionToken() {
     Cookie.remove("access-token");
+  }
+
+  addToCookies<T = any>(key: string, value: T) {
+    Cookie.set(key, JSON.stringify(value));
+  }
+
+  getValueFromCookies<T = any>(key: string) {
+    return Cookie.get(key)
+      ? JSON.parse(Cookie.get(key) || "")
+      : (undefined as T);
   }
 
   async joinNewsLetter(email: string, joinFrom: IJoinNewsLetterFrom) {
@@ -158,10 +180,211 @@ export class StoreBuild {
     return res.data;
   }
 
+  async getDashboardContent(timeFrame: "all" | "7d" | "30d") {
+    const q = queryString.stringify({ timeFrame });
+
+    const res: { data: apiResponse<IDashboardMetrics[]> } = await api.get(
+      `/get-dashboard-content/?${q}`,
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async getOrders(
+    q?: string,
+    startPage?: number,
+    endPage?: number,
+    asc = false
+  ) {
+    const _q = queryString.stringify({ q, startPage, endPage, asc });
+
+    const res: {
+      data: apiResponse<{
+        orders: IOrder[];
+        orderStatusCount: Record<IOrderStatus | "All", number>;
+      }>;
+    } = await api.get(`/get-orders/?${_q}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
   async signOut() {
     this.removeSessionToken();
     window.location.reload();
   }
+
+  async createOrEditProduct(product: IProduct) {
+    const res: { data: apiResponse<IProduct> } = await api.post(
+      "/create-or-edit-product/",
+      product,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async createCategory(payload: ICategory) {
+    const res: apiResponse<ICategory> = await api.post(
+      "/create-category/",
+      payload,
+      {
+        headers: {
+          Authorization: this.getSessionToken,
+        },
+      }
+    );
+
+    return res.data;
+  }
+
+  async calculateProductsPrice(productIds: string) {
+    const res: { data: apiResponse<number> } = await api.post(
+      `/calculate-products-price/`,
+      { productIds }
+    );
+
+    return res.data;
+  }
+
+  async getCategories(storeId: string) {
+    const res: { data: apiResponse<ICategory[]> } = await api.get(
+      `/get-categories/${storeId}/`
+    );
+
+    return res.data;
+  }
+
+  async getIntegrations() {
+    const res: {
+      data: apiResponse<{ storeId: string; integration: IIntegrationType }[]>;
+    } = await api.get("/get-integrations/", {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async connectAndDisconnectIntegrations(integrationId: string) {
+    const res: { data: apiResponse } = await api.post(
+      "/connect-and-disconnect-integration/",
+      { integrationId },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async manageIntegration(integrationId: string, data: any) {
+    const res: { data: apiResponse } = await api.patch(
+      "/manage-integration/",
+      { integrationId, data },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getIntegration(integrationId: string) {
+    const res: {
+      data: apiResponse<{
+        integration:
+          | IPaymentIntegration
+          | IDeliveryIntegration
+          | IChatBotIntegration;
+      }>;
+    } = await api.get(`/get-integrations/${integrationId}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async getProducts(storeId: string, query?: getProductsTypes) {
+    const q = queryString.stringify({ ...query, storeId });
+    const res: {
+      data: apiResponse<{
+        totalProducts: number;
+        digitalProducts: number;
+        lowStockProducts: number;
+        outOfStockProducts: number;
+        products: IProduct[];
+      }>;
+    } = await api.get(`/get-products/?${q}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+    return res.data;
+  }
+
+  async getProductAnalytics(productId: string) {
+    const res: { data: apiResponse<IProductAnalytics> } = await api.get(
+      `/get-product-analytics/${productId}/`,
+      {
+        headers: {
+          Authorization: this.getSessionToken,
+        },
+      }
+    );
+
+    return res.data;
+  }
+
+  async deleteProduct(productId: string) {
+    const res: { data: apiResponse } = await api.delete(
+      `/delete-products/${productId}/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getProduct(productId: string) {
+    const res: { data: apiResponse<IProduct> } = await api.get(
+      `/get-products/${productId}/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async createOrder(order: IOrder, storeId?: string) {
+    const res: { data: apiResponse<IOrder> } = await api.post(
+      `/create-order/`,
+      { order, storeId },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+}
+
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const q = queryString.stringify({
+    key: import.meta.env.VITE_IBB_API_KEY,
+  });
+
+  const res: { data: { data: { display_url: string } } } = await axios.post(
+    `https://api.imgbb.com/1/upload?${q}`,
+    formData
+  );
+
+  return res.data;
+};
+
+export function generateRandomString(length = 7): string {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 }
 
 export const isPathMatching = (
@@ -195,11 +418,42 @@ export function addQueryParameter(key: string, value: string, url?: string) {
   return updatedQuery;
 }
 
+export const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+};
+
+export const copyToClipboard = (text: string, label: string) => {
+  navigator.clipboard.writeText(text);
+  toast({
+    description: `${label} copied to clipboard`,
+  });
+};
+
 export const getCallbackUrl = () => {
   const callbackUrl = queryString.parse(location.search) as {
     callbackUrl: string | null;
   };
   return callbackUrl.callbackUrl;
+};
+
+export const addEllipseToText = (text: string, num = 10) => {
+  return text.slice(0, num) + "...";
+};
+
+export const getOrderProductCount = (
+  products: IProduct[],
+  productId: string
+) => {
+  return products.reduce((acc, curr) => {
+    if (curr?._id === productId) {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
 };
 
 export function formatAmountToNaira(amount: number) {

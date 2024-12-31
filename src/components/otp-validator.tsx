@@ -52,12 +52,15 @@ const OtpValidator: FC = () => {
         openOTPValidator.userEmail!,
         openOTPValidator.otpFor
       );
+
+      form.resetField("pin");
+
+      setOpenOTPValidator({ ...openOTPValidator, open: false });
+      openOTPValidator.onSuccess && openOTPValidator.onSuccess();
       toast({
         title: "Success",
         description: "You can proceed with your next action.",
       });
-      setOpenOTPValidator({ ...openOTPValidator, open: false });
-      openOTPValidator.onSuccess && openOTPValidator.onSuccess();
     } catch (error) {
       const _error = errorMessageAndStatus(error);
       toast({

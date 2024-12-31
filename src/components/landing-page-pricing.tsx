@@ -2,6 +2,7 @@ import { Text } from "./text";
 import { tiers } from "@/constants";
 import { FadeInWhenVisible } from "./fade-in-when-visible";
 import PricingCard from "./pricing-card";
+import { cn } from "@/lib/utils";
 
 export default function LandingPagePricing() {
   return (
@@ -35,7 +36,7 @@ export default function LandingPagePricing() {
       <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-center gap-y-6 sm:mt-20 sm:gap-y-0 lg:max-w-4xl lg:grid-cols-2">
         {tiers.map((tier, tierIdx) => (
           <FadeInWhenVisible key={tier.id} delay={0.3 + tierIdx * 0.1}>
-            <PricingCard {...tier} tierIdx={Number(tier.id)} />
+            <PricingCard {...tier} tierIdx={Number(tierIdx)} />
           </FadeInWhenVisible>
         ))}
       </div>

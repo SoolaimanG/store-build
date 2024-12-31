@@ -38,14 +38,15 @@ const SignIn = () => {
               userEmail: data.email,
               otpFor: "verify-email",
               onSuccess: () => {
-                window.location.reload();
+                n(PATHS.DASHBOARD);
               },
             });
             return;
           } else if (user?.plan.type === "free") {
             n(PATHS.SUBSCRIBE);
             return;
-          } else if (Boolean(Math.floor(Math.random() * 1))) {
+          } else {
+            window.location.href = PATHS.DASHBOARD;
           }
         },
       });

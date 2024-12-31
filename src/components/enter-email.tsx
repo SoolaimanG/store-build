@@ -32,10 +32,6 @@ export const EnterEmail: FC<
     },
   });
 
-  function onSubmit(values: z.infer<typeof emailSchema>) {
-    onNext(values);
-  }
-
   return (
     <motion.div
       initial="initial"
@@ -54,7 +50,7 @@ export const EnterEmail: FC<
         {header}
       </motion.h1>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onNext)} className="space-y-6">
           <motion.div {...formAnimation}>
             <FormField
               control={form.control}
@@ -79,6 +75,7 @@ export const EnterEmail: FC<
               type="submit"
               variant="ringHover"
               className="rounded-full h-[3rem] w-[9rem]"
+              disabled={form.formState.isSubmitting || form.formState.isLoading}
             >
               {btnLabel}
             </Button>

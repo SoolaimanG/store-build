@@ -143,7 +143,7 @@ export const LandingPageNavBar: FC = () => {
         className="flex items-center gap-2"
       >
         {" "}
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="rounded-full">
           <Link to={PATHS.SIGNUP}>Let's do it</Link>
         </Button>
         <AnimatePresence>

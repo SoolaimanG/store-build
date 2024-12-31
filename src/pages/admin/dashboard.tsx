@@ -2,7 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  addQueryParameter,
+  cn,
+  formatAmountToNaira,
+  generateRandomString,
+  getInitials,
+  storeBuilder,
+} from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
 import {
   Bar,
@@ -12,7 +19,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
 import {
   Card,
   CardContent,
@@ -27,98 +33,24 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { useState } from "react";
+import { FC, useState } from "react";
 import { tiers } from "@/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import PricingCard from "@/components/pricing-card";
+import queryString from "query-string";
+import { useStoreBuildState } from "@/store";
+import { useQuery } from "@tanstack/react-query";
+import { useToastError } from "@/hooks/use-toast-error";
+import { IDashboardMetrics, PATHS } from "@/types";
+import MetricLoading from "@/components/loaders/metric-loading";
+import RecentOrdersLoading from "@/components/loaders/recent-orders-loading";
 
 const timeRanges = [
+  { value: "all", label: "All-time" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
-  { value: "all", label: "All-time" },
-];
-
-const metrics = [
-  {
-    label: "Total Orders",
-    value: "$405,091.00",
-    change: "+4.75%",
-    isPositive: true,
-  },
-  {
-    label: "Today's Sale",
-    value: "$12,787.00",
-    change: "+54.02%",
-    isPositive: false,
-  },
-  {
-    label: "Last Week Sale",
-    value: "$245,988.00",
-    change: "-1.39%",
-    isPositive: true,
-  },
-  {
-    label: "Last Month Sale",
-    value: "$30,156.00",
-    change: "+10.18%",
-    isPositive: false,
-  },
-];
-
-const recentActivity = [
-  {
-    amount: "$7,600.00 USD",
-    tax: "$500.00 tax",
-    status: "Paid",
-    client: "Reform",
-    description: "Website redesign",
-    invoiceNumber: "00012",
-    date: "Today",
-  },
-  {
-    amount: "$10,000.00 USD",
-    status: "Pending",
-    client: "Tom Cook",
-    description: "Salary",
-    invoiceNumber: "00011",
-    date: "Today",
-  },
-  {
-    amount: "$2,000.00 USD",
-    tax: "$130.00 tax",
-    status: "Pending",
-    client: "Tuple",
-    description: "Logo design",
-    invoiceNumber: "00009",
-    date: "Today",
-  },
-  {
-    amount: "$14,000.00 USD",
-    tax: "$900.00 tax",
-    status: "Paid",
-    client: "SavvyCal",
-    description: "Website redesign",
-    invoiceNumber: "00010",
-    date: "Yesterday",
-  },
-];
-
-const salesData = [
-  {
-    name: "Olivia Martin",
-    email: "olivia.martin@email.com",
-    amount: "$1,999.00",
-  },
-  { name: "Jackson Lee", email: "jackson.lee@email.com", amount: "$39.00" },
-  {
-    name: "Isabella Nguyen",
-    email: "isabella.nguyen@email.com",
-    amount: "$299.00",
-  },
-  { name: "William Kim", email: "will@email.com", amount: "$99.00" },
-  { name: "Sofia Davis", email: "sofia.davis@email.com", amount: "$39.00" },
 ];
 
 const chartData = [
@@ -145,7 +77,31 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Dashboard() {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("7d");
+  const location = useLocation();
+  const n = useNavigate();
+  const { user } = useStoreBuildState();
+
+  const { timeRange = "all" } = queryString.parse(location.search) as {
+    timeRange: "all" | "30d" | "7d";
+  };
+
+  const handleTimeRangeChange = (timeRange: string) => {
+    n(`?${addQueryParameter("timeRange", timeRange)}`);
+  };
+
+  const {
+    isLoading: loadingMetrics,
+    data: metricsResponse,
+    error,
+  } = useQuery({
+    queryKey: [timeRange],
+    queryFn: () => storeBuilder.getDashboardContent(timeRange),
+  });
+
+  const { data: metrics } = metricsResponse || {};
+
+  useToastError(error);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -161,9 +117,13 @@ export default function Dashboard() {
             transition={{ delay: 0.2 }}
             className="text-2xl font-semibold tracking-tight"
           >
-            Cashflow
+            {user?.storeName}
           </motion.h2>
-          <Tabs defaultValue="7d" onValueChange={setSelectedTimeRange}>
+          <Tabs
+            defaultValue="all"
+            value={timeRange}
+            onValueChange={handleTimeRangeChange}
+          >
             <TabsList>
               {timeRanges.map((range) => (
                 <TabsTrigger key={range.value} value={range.value}>
@@ -179,9 +139,15 @@ export default function Dashboard() {
           transition={{ delay: 0.4 }}
           className="flex items-center gap-4"
         >
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
+          <Button asChild size="sm">
+            <Link
+              className="text-sm"
+              to={PATHS.STORE_PRODUCTS + `${generateRandomString(24)}#new`}
+            >
+              {" "}
+              <Plus className="mr-2 h-4 w-4" />
+              Add product
+            </Link>
           </Button>
         </motion.div>
       </div>
@@ -193,39 +159,11 @@ export default function Dashboard() {
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
       >
         <AnimatePresence mode="wait">
-          {metrics.map((metric, i) => (
-            <motion.div
-              key={`${selectedTimeRange}-${i}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-muted-foreground">
-                      {metric.label}
-                    </span>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold">{metric.value}</span>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-medium",
-                          metric.isPositive
-                            ? "text-green-600 border-green-600/20 bg-green-50"
-                            : "text-red-600 border-red-600/20 bg-red-50"
-                        )}
-                      >
-                        {metric.change}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+          {loadingMetrics ? (
+            <MetricLoading />
+          ) : (
+            metrics?.map((metric, i) => <MetricsCard key={i} {...metric} />)
+          )}
         </AnimatePresence>
       </motion.div>
 
@@ -236,7 +174,11 @@ export default function Dashboard() {
         className="grid grid-cols-3 gap-3"
       >
         <RecentOrder className="md:col-span-2 col-span-3" />
-        <AISuggestion className="md:col-span-1 col-span-3" />
+        {user?.plan.type === "free" ? (
+          <Chart />
+        ) : (
+          <AISuggestion className="md:col-span-1 col-span-3" />
+        )}
       </motion.div>
 
       <motion.div
@@ -246,7 +188,7 @@ export default function Dashboard() {
         className="space-y-4"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Recent clients</h3>
+          <h3 className="text-lg font-medium">Recent Paid Orders</h3>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <RecentSales className="md:col-span-2 col-span-3" />
@@ -262,41 +204,113 @@ export default function Dashboard() {
   );
 }
 
+const MetricsCard: FC<IDashboardMetrics> = (metric) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted-foreground">
+              {metric.label}
+            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{metric.value}</span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "font-medium",
+                  metric.isPositive
+                    ? "text-green-600 border-green-600/20 bg-green-50"
+                    : "text-red-600 border-red-600/20 bg-red-50"
+                )}
+              >
+                {metric.change}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
 export function RecentSales({ className }: { className?: string }) {
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["recent-sales"],
+    queryFn: () => storeBuilder.getOrders("Paid", 0, 5, true),
+  });
+
+  const { data: recentSales } = data || {};
+
+  useToastError(error);
+
   return (
     <Card className={cn("w-full text-white py-2", className)}>
       <CardHeader>
         <CardTitle>Recent Sales</CardTitle>
-        <CardDescription>You made 265 sales this month.</CardDescription>
+        <CardDescription>Below are your most recent sales.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {salesData.map((sale, index) => (
-          <motion.div
-            key={index}
-            className="flex items-center justify-between"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage
-                  src="/placeholder.svg?height=40&width=40"
-                  alt={sale.name}
-                />
-                <AvatarFallback>{sale.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{sale.name}</p>
-                <p className="text-sm text-muted-foreground">{sale.email}</p>
+        {isLoading ? (
+          <RecentOrdersLoading />
+        ) : !!recentSales?.orders.length ? (
+          recentSales?.orders?.map((order, index) => (
+            <motion.div
+              key={index}
+              className="flex items-center justify-between"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <div className="flex items-center space-x-4">
+                <Avatar>
+                  <AvatarImage
+                    src="/placeholder.svg?height=40&width=40"
+                    alt={order.customerDetails.name}
+                  />
+                  <AvatarFallback>
+                    {getInitials(order.customerDetails.name || "")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{order.customerDetails.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {order.customerDetails.email}
+                  </p>
+                </div>
               </div>
-            </div>
-            <p className="font-medium">{sale.amount}</p>
-          </motion.div>
-        ))}
+              <p className="font-medium">{order.amountPaid}</p>
+            </motion.div>
+          ))
+        ) : (
+          <div className="flex h-[20rem] flex-col items-center justify-center p-8 text-center">
+            <svg
+              className="w-12 h-12 text-gray-400 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <h3 className="text-lg font-medium mb-2">No recent sales</h3>
+            <p className="text-sm text-muted-foreground">
+              When you sell an item, they will appear here.
+            </p>
+          </div>
+        )}
         <CardFooter className="p-0 w-full">
           <Button asChild variant="ringHover" size="lg" className="w-full mt-3">
-            <Link to={"/"}> See All Orders</Link>
+            <Link to={PATHS.STORE_ORDERS}> See All Orders</Link>
           </Button>
         </CardFooter>
       </CardContent>
@@ -306,7 +320,12 @@ export function RecentSales({ className }: { className?: string }) {
 
 export function Chart({ className }: { className?: string }) {
   return (
-    <Card className={cn("w-full", className)}>
+    <Card
+      className={cn(
+        "col-span-full md:col-span-1 p-3 h-full flex flex-col",
+        className
+      )}
+    >
       <CardHeader>
         <CardTitle>Yearly Sales</CardTitle>
         <CardDescription>
@@ -374,57 +393,97 @@ export function Chart({ className }: { className?: string }) {
   );
 }
 
-export function RecentOrder({ className }: { className?: string }) {
+function RecentOrder({ className }: { className?: string }) {
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["orders"],
+    queryFn: () => storeBuilder.getOrders(undefined, 0, 5, true),
+  });
+
+  const { data: recentOrders } = data || {};
+
+  useToastError(error);
+
   return (
     <div className={cn("space-y-4", className)}>
       <h3 className="text-lg font-medium">Recent orders</h3>
       <div className="space-y-4">
-        {recentActivity.map((activity, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between p-4 rounded-lg border cursor-pointer"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col">
-                <span className="font-medium">{activity.amount}</span>
-                {activity.tax && (
-                  <span className="text-sm text-muted-foreground">
-                    {activity.tax}
+        {isLoading ? (
+          // Skeleton loading
+          <RecentOrdersLoading />
+        ) : recentOrders && recentOrders.orders.length > 0 ? (
+          recentOrders.orders.map((order, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between p-4 rounded-lg border cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col">
+                  <span className="font-medium">
+                    {formatAmountToNaira(order.totalAmount)}
                   </span>
-                )}
+                  {Boolean(order.amountLeftToPay) && (
+                    <span className="text-sm text-muted-foreground">
+                      {order.amountLeftToPay}
+                    </span>
+                  )}
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-medium capitalize",
+                    order.paymentDetails.paymentStatus === "paid" &&
+                      "text-green-600 border-green-600/20 bg-green-50",
+                    order.paymentDetails.paymentStatus === "pending" &&
+                      "text-yellow-600 border-yellow-600/20 bg-yellow-50",
+                    order.paymentDetails.paymentStatus === "failed" &&
+                      "text-red-600 border-red-600/20 bg-red-50"
+                  )}
+                >
+                  {order.paymentDetails.paymentStatus}
+                </Badge>
               </div>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "font-medium",
-                  activity.status === "Paid" &&
-                    "text-green-600 border-green-600/20 bg-green-50",
-                  activity.status === "Pending" &&
-                    "text-yellow-600 border-yellow-600/20 bg-yellow-50",
-                  activity.status === "Cancelled" &&
-                    "text-red-600 border-red-600/20 bg-red-50"
-                )}
-              >
-                {activity.status}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col text-right">
-                <span className="font-medium">{activity.client}</span>
-                <span className="text-sm text-muted-foreground">
-                  {activity.description}
-                </span>
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col text-right">
+                  <span className="font-medium">
+                    {order.customerDetails.name}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {order.note}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:text-primary/60"
+                  asChild
+                >
+                  <Link to={PATHS.STORE_ORDERS + order._id}>View order</Link>
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-primary hover:text-primary/60"
-              >
-                View order
-              </Button>
             </div>
+          ))
+        ) : (
+          // Empty state
+          <div className="flex h-[23rem] flex-col items-center justify-center p-8 text-center border rounded-lg">
+            <svg
+              className="w-12 h-12 text-gray-400 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <h3 className="text-lg font-medium mb-2">No recent orders</h3>
+            <p className="text-sm text-muted-foreground">
+              When you receive new orders, they will appear here.
+            </p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
