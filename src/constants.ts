@@ -515,7 +515,14 @@ export const productSchema = z.object({
 
 export const orderSchema = z.object({
   storeId: z.string().min(1, "Store ID is required"),
-  orderStatus: z.enum(["Pending", "Completed", "Cancelled", "Refunded"]),
+  orderStatus: z.enum([
+    "Pending",
+    "Completed",
+    "Cancelled",
+    "Refunded",
+    "Shipped",
+    "Processing",
+  ]),
   paymentStatus: z.enum(["pending", "paid", "failed"]),
   customerEmail: z.string().email("Invalid email address"),
   customerPhone: z.string().min(1, "Phone number is required"),

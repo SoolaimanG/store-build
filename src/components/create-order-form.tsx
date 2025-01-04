@@ -22,27 +22,34 @@ import {
   errorMessageAndStatus,
   formatAmountToNaira,
   getInitials,
-  isPathMatching,
   storeBuilder,
 } from "@/lib/utils";
-import { IOrder, IOrderStatus, IPaymentStatus } from "@/types";
+import { apiResponse, IOrder, IOrderStatus, IPaymentStatus } from "@/types";
 import { orderForm, orderSchema } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 import { useToastError } from "@/hooks/use-toast-error";
-import { useParams } from "react-router-dom";
 import { useStoreBuildState } from "@/store";
 import { ProductSelector } from "./product-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 type FormData = z.infer<typeof orderSchema>;
 
-export default function CreateOrderForm() {
-  const { id } = useParams();
+export default function CreateOrderForm({
+  isEditingMode = false,
+  id,
+}: {
+  isEditingMode?: boolean;
+  id: string;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { selectedProducts, onProductSelect, removeProduct } =
+  const { selectedProducts, onProductSelect, removeProduct, user } =
     useStoreBuildState();
 
-  const isEditingMode = !isPathMatching("/new", { pageLevel: 1, level: 2 });
+  const { data: orderData, error: orderError } = useQuery({
+    queryKey: ["order", id],
+    queryFn: () => storeBuilder.getOrder(id),
+    enabled: Boolean(isEditingMode && id),
+  });
 
   const {
     control,
@@ -67,10 +74,35 @@ export default function CreateOrderForm() {
   });
 
   const { data: i } = data || {};
+  const { data: _data } = orderData || {};
 
-  useToastError(error);
+  useToastError(error || orderError);
 
-  console.log(form);
+  useEffect(() => {
+    if (_data) {
+      const { order } = _data;
+
+      form.setValue("amountPaid", order.amountPaid);
+      form.setValue("customerEmail", order.customerDetails.email);
+      form.setValue("customerName", order.customerDetails.name);
+      form.setValue("customerPhone", order.customerDetails.phoneNumber);
+      form.setValue(
+        "estimatedDeliveryDate",
+        new Date(order.shippingDetails.estimatedDeliveryDate)
+      );
+      form.setValue("note", order.note);
+      form.setValue("orderStatus", order.orderStatus);
+      form.setValue("paymentMethod", order.paymentMethod);
+      form.setValue("paymentStatus", order.paymentDetails.paymentStatus);
+      form.setValue("products", order.products);
+      form.setValue("shippingAddress", order.customerDetails.shippingAddress);
+      form.setValue("shippingCost", order.shippingDetails.shippingCost);
+      form.setValue("shippingMethod", order.shippingDetails.shippingMethod);
+      form.setValue("totalAmount", order.totalAmount);
+
+      onProductSelect(order.products);
+    }
+  }, [orderData]);
 
   useEffect(() => {
     const total = selectedProducts.reduce(
@@ -86,7 +118,7 @@ export default function CreateOrderForm() {
     try {
       const data = form.getValues();
       const orderData: IOrder = {
-        storeId: data.storeId,
+        storeId: user?.storeId || "",
         orderStatus: data.orderStatus as IOrderStatus,
         paymentDetails: {
           paymentStatus: data.paymentStatus as IPaymentStatus,
@@ -110,8 +142,9 @@ export default function CreateOrderForm() {
         shippingDetails: {
           shippingMethod: data.shippingMethod,
           shippingCost: data.shippingCost || 0,
-          estimatedDeliveryDate:
-            new Date(data?.estimatedDeliveryDate || "").toISOString() || "",
+          estimatedDeliveryDate: new Date(
+            data?.estimatedDeliveryDate || ""
+          ).toISOString(),
           trackingNumber: "TRK-" + Math.random().toString(36).substr(2, 9),
           carrier: "DHL",
         },
@@ -119,15 +152,21 @@ export default function CreateOrderForm() {
         products: selectedProducts,
       };
 
-      const result = await storeBuilder.createOrder(orderData);
+      let result: apiResponse<IOrder>;
+
+      if (isEditingMode) {
+        result = await storeBuilder.editOrder(id, orderData, false);
+      } else {
+        result = await storeBuilder.createOrder(orderData);
+      }
 
       toast({
-        title: "Order Created",
+        title: !isEditingMode ? "Order Created" : "Order Editted",
         description: result.message,
       });
 
       form.reset();
-      onProductSelect([]);
+      !isEditingMode && onProductSelect([]);
     } catch (error) {
       console.error("Error creating order:", error);
       const {

@@ -9,19 +9,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { IProduct } from "@/types";
 
-interface DeleteDialogProps {
+interface ConfirmationModalProps {
   product: IProduct | null;
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
 
-export function DeleteDialog({
+export function ConfirmationModal({
   product,
   isOpen,
   onClose,
   onConfirm,
-}: DeleteDialogProps) {
+}: ConfirmationModalProps) {
   if (!product) return null;
 
   return (

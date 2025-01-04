@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import {
+  ArrowDownUp,
+  ArrowUpDown,
   Calendar,
   ChevronDown,
   ChevronUp,
@@ -47,26 +49,37 @@ import { useQuery } from "@tanstack/react-query";
 import { IOrderStatus, PATHS } from "@/types";
 import { useToastError } from "@/hooks/use-toast-error";
 import { EmptyProductState } from "@/components/empty";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import OrdersLoading from "@/components/loaders/orders-loading";
 
-const statusColors = {
+const statusColors: Record<IOrderStatus, any> = {
   Pending: "bg-yellow-100 text-yellow-800",
   Completed: "bg-green-100 text-green-800",
   Cancelled: "bg-red-100 text-red-800",
   Refunded: "bg-gray-100 text-gray-800",
+  Processing: "",
+  Shipped: "",
 };
 
 export default function DashboardOrders() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const n = useNavigate();
   const [expandedRow, setExpandedRow] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
   const filterScrollRef = React.useRef<HTMLDivElement>(null);
-  const { filter = "All" } = queryString.parse(location.search) as {
+  const {
+    filter = "All",
+    page = 1,
+    asc = true,
+  } = queryString.parse(location.search, {
+    parseNumbers: true,
+    parseBooleans: true,
+  }) as {
     filter: IOrderStatus | "All";
+    page?: number;
+    asc?: boolean;
   };
 
   const toggleRow = (orderId: string) => {
@@ -80,15 +93,26 @@ export default function DashboardOrders() {
   };
 
   const onFilterChange = (newFilter: IOrderStatus | "All") => {
-    navigate("?" + addQueryParameter("filter", newFilter));
+    n("?" + addQueryParameter("filter", newFilter));
   };
 
   const { isLoading, data, error } = useQuery({
-    queryKey: ["orders", searchQuery, startDate, endDate, filter],
-    queryFn: () => storeBuilder.getOrders(filter),
+    queryKey: ["orders", searchQuery, startDate, endDate, filter, asc, page],
+    queryFn: () =>
+      storeBuilder.getOrders(
+        searchQuery,
+        10 * page,
+        undefined,
+        asc,
+        filter,
+        startDate?.toISOString(),
+        endDate?.toISOString()
+      ),
   });
 
   const { data: order } = data || {};
+
+  console.log(data);
 
   const filters: {
     label: IOrderStatus | "All";
@@ -114,7 +138,7 @@ export default function DashboardOrders() {
         <h1 className="text-4xl font-bold tracking-tight">Orders</h1>
         <Button asChild size="sm" variant="ringHover" className="gap-2">
           <Link
-            to={PATHS.STORE_ORDERS + "new/" + generateRandomString(18) + "#new"}
+            to={PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"}
           >
             <PlusIcon size={18} />
             Create Order
@@ -155,31 +179,35 @@ export default function DashboardOrders() {
           ))}
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <Input
-              type="date"
-              value={startDate ? startDate.toISOString().slice(0, 10) : ""}
-              onChange={(e) =>
-                setStartDate(
-                  e.target.value ? new Date(e.target.value) : undefined
-                )
-              }
-              className="w-full md:w-40"
-            />
-            <span className="hidden md:inline">to</span>
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <Input
-              type="date"
-              value={endDate ? endDate.toISOString().slice(0, 10) : ""}
-              onChange={(e) =>
-                setEndDate(
-                  e.target.value ? new Date(e.target.value) : undefined
-                )
-              }
-              className="w-full md:w-40"
-            />
+        <div className="flex flex-col gap-4 w-full">
+          <div className="flex flex-col md:flex-row items-center gap-2 w-full">
+            <div className="w-full flex items-center gap-3">
+              <Calendar size={21} className="text-gray-500" />
+              <Input
+                type="date"
+                value={startDate ? startDate.toISOString().slice(0, 10) : ""}
+                onChange={(e) =>
+                  setStartDate(
+                    e.target.value ? new Date(e.target.value) : undefined
+                  )
+                }
+                className="w-full"
+              />
+            </div>
+            <div className="w-full flex items-center gap-3">
+              <span className="hidden md:inline">To</span>
+              <Calendar size={21} className="text-gray-500" />
+              <Input
+                type="date"
+                value={endDate ? endDate.toISOString().slice(0, 10) : ""}
+                onChange={(e) =>
+                  setEndDate(
+                    e.target.value ? new Date(e.target.value) : undefined
+                  )
+                }
+                className="w-full"
+              />
+            </div>
           </div>
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -199,38 +227,7 @@ export default function DashboardOrders() {
         transition={{ duration: 0.3, delay: 0.2 }}
       >
         {isLoading ? (
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Array(8)
-                      .fill(0)
-                      .map((_, index) => (
-                        <TableHead key={index}>
-                          <Skeleton className="h-4 w-full" />
-                        </TableHead>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <TableRow key={index}>
-                        {Array(8)
-                          .fill(0)
-                          .map((_, cellIndex) => (
-                            <TableCell key={cellIndex}>
-                              <Skeleton className="h-4 w-full" />
-                            </TableCell>
-                          ))}
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <OrdersLoading />
         ) : order?.orders && order.orders.length > 0 ? (
           <Card>
             <CardContent className="p-0">
@@ -238,7 +235,19 @@ export default function DashboardOrders() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Order</TableHead>
+                    <TableHead
+                      onClick={() =>
+                        n("?" + addQueryParameter("asc", String(!Boolean(asc))))
+                      }
+                      className="flex items-center gap-1"
+                    >
+                      Order
+                      {asc ? (
+                        <ArrowDownUp size={16} />
+                      ) : (
+                        <ArrowUpDown size={16} />
+                      )}
+                    </TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Products</TableHead>
@@ -322,8 +331,23 @@ export default function DashboardOrders() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View Details</DropdownMenuItem>
-                              <DropdownMenuItem>Edit Order</DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={PATHS.STORE_ORDERS + order._id}>
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                {" "}
+                                <Link
+                                  to={
+                                    PATHS.STORE_ORDERS +
+                                    order._id +
+                                    "/create/#edit"
+                                  }
+                                >
+                                  Edit Order
+                                </Link>
+                              </DropdownMenuItem>
                               <DropdownMenuItem>Delete Order</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -418,10 +442,7 @@ export default function DashboardOrders() {
             <Button variant="ringHover" asChild className="gap-2">
               <Link
                 to={
-                  PATHS.STORE_ORDERS +
-                  "new/" +
-                  generateRandomString(18) +
-                  "#new"
+                  PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"
                 }
               >
                 <PlusIcon size={18} />

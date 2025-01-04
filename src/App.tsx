@@ -119,7 +119,7 @@ function App() {
                 }
               />
               <Route
-                path={PATHS.STORE_ORDERS + "new/" + ":id"}
+                path={PATHS.STORE_ORDERS + ":id" + "/create/"}
                 element={
                   <DashboardProvider>
                     <DashboardCreateOrder />

@@ -365,7 +365,13 @@ export type IShippingDetails = {
   carrier: "DHL";
 };
 
-export type IOrderStatus = "Pending" | "Completed" | "Cancelled" | "Refunded";
+export type IOrderStatus =
+  | "Pending"
+  | "Completed"
+  | "Cancelled"
+  | "Refunded"
+  | "Shipped"
+  | "Processing";
 
 export type IOrder = {
   _id?: string;

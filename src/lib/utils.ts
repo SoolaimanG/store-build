@@ -197,9 +197,20 @@ export class StoreBuild {
     q?: string,
     startPage?: number,
     endPage?: number,
-    asc = false
+    asc = false,
+    filter: IOrderStatus | "All" = "All",
+    startDate?: string,
+    endDate?: string
   ) {
-    const _q = queryString.stringify({ q, startPage, endPage, asc });
+    const _q = queryString.stringify({
+      q,
+      startPage,
+      endPage,
+      asc,
+      filter,
+      startDate,
+      endDate,
+    });
 
     const res: {
       data: apiResponse<{
@@ -359,6 +370,46 @@ export class StoreBuild {
     );
     return res.data;
   }
+
+  async getOrder<T = any>(orderId: string) {
+    const res: apiResponse<{ data: { order: IOrder; deliveryDetails: T } }> =
+      await api.get(`/get-orders/${orderId}/`, {
+        headers: { Authorization: this.getSessionToken },
+      });
+
+    return res.data;
+  }
+
+  async getQuickEmails() {
+    const res: { data: apiResponse<{ id: string; label: string }[]> } =
+      await api.get("/get-quick-emails/", {
+        headers: {
+          Authorization: this.getSessionToken,
+        },
+      });
+
+    return res.data;
+  }
+
+  async sendQuickEmail(emailId: string, orderId: string) {
+    const res: { data: apiResponse } = await api.post(
+      `/send-quick-email/${emailId}/`,
+      { orderId },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async editOrder(orderId: string, updates: Partial<IOrder>, partial = false) {
+    const res: { data: apiResponse<IOrder> } = await api.patch(
+      `/edit-order/${orderId}/`,
+      { updates, partial },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
 }
 
 export const uploadImage = async (file: File) => {
@@ -418,7 +469,7 @@ export function addQueryParameter(key: string, value: string, url?: string) {
   return updatedQuery;
 }
 
-export const getInitials = (name: string) => {
+export const getInitials = (name: string = "") => {
   return name
     .split(" ")
     .map((n) => n[0])

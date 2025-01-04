@@ -38,7 +38,7 @@ import {
 import { IProduct, PATHS } from "@/types";
 import { useState } from "react";
 import { ViewProductDialog } from "./view-product";
-import { DeleteDialog } from "./delete-modal";
+import { ConfirmationModal } from "./confirmation-modal";
 import { UpdateStockDialog } from "./update-product";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -60,7 +60,7 @@ export function ProductTable({
   const { user } = useStoreBuildState();
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [isUpdateStockDialogOpen, setIsUpdateStockDialogOpen] = useState(false);
   const [isPending, startTransition] = useState(false);
 
@@ -112,7 +112,7 @@ export function ProductTable({
       startTransition(true);
       const res = await storeBuilder.deleteProduct(selectedProduct?._id || "");
 
-      setIsDeleteDialogOpen(false);
+      setIsConfirmationModalOpen(false);
       invalidateProduct();
 
       toast({
@@ -302,7 +302,7 @@ export function ProductTable({
                       className="text-red-600"
                       onClick={() => {
                         setSelectedProduct(product);
-                        setIsDeleteDialogOpen(true);
+                        setIsConfirmationModalOpen(true);
                       }}
                     >
                       Delete product
@@ -319,10 +319,10 @@ export function ProductTable({
         isOpen={isViewDialogOpen}
         onClose={() => setIsViewDialogOpen(false)}
       />
-      <DeleteDialog
+      <ConfirmationModal
         product={selectedProduct}
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
+        isOpen={isConfirmationModalOpen}
+        onClose={() => setIsConfirmationModalOpen(false)}
         onConfirm={handleDeleteProduct}
       />
       <UpdateStockDialog
