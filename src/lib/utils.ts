@@ -3,7 +3,10 @@ import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import {
   apiResponse,
+  Customer,
+  CustomersResponse,
   getProductsTypes,
+  IAvailableColors,
   ICategory,
   IChatBotIntegration,
   ICheckFor,
@@ -17,7 +20,11 @@ import {
   IPaymentIntegration,
   IProduct,
   IProductAnalytics,
+  IProductReview,
   IProductTypes,
+  IRating,
+  IStore,
+  IStoreTheme,
   IUser,
 } from "@/types";
 import qs from "query-string";
@@ -49,6 +56,14 @@ export const errorMessageAndStatus = (error: any) => {
 export class StoreBuild {
   get getSessionToken() {
     return `Bearer ${Cookie.get("access-token")}`;
+  }
+
+  set saveCurrentStoreCodeInCookie(storeCode: string) {
+    Cookie.set("current-store-code", storeCode);
+  }
+
+  get getCurrentStoreCodeFromCookie() {
+    return Cookie.get("current-store-code");
   }
 
   // Setter for the access token, with a 2-day expiration
@@ -90,6 +105,7 @@ export class StoreBuild {
     email: string,
     storeName: string,
     productType: string,
+    fullName: string,
     referralCode?: string,
     discoveredUsBy?: string
   ) {
@@ -99,6 +115,7 @@ export class StoreBuild {
         productType,
         referralCode,
         storeName,
+        fullName,
         discoveredUsBy,
       });
 
@@ -253,11 +270,31 @@ export class StoreBuild {
     return res.data;
   }
 
-  async calculateProductsPrice(productIds: string) {
-    const res: { data: apiResponse<number> } = await api.post(
-      `/calculate-products-price/`,
-      { productIds }
-    );
+  async editCategory(id: string, payload: Partial<ICategory>) {
+    const res = await api.patch(`/edit-category/${id}/`, payload, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async deleteCategory(id: string) {
+    const res = await api.delete(`/delete-category/${id}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+    return res.data;
+  }
+
+  async calculateProductsPrice(
+    cartItems: { productId: string; color?: string; size?: string }[]
+  ) {
+    const res: {
+      data: apiResponse<{
+        totalAmount: number;
+        discountedAmount: number;
+        discountPercentage: number;
+      }>;
+    } = await api.post(`/calculate-products-price/`, { cartItems });
 
     return res.data;
   }
@@ -303,10 +340,15 @@ export class StoreBuild {
   async getIntegration(integrationId: string) {
     const res: {
       data: apiResponse<{
-        integration:
-          | IPaymentIntegration
-          | IDeliveryIntegration
-          | IChatBotIntegration;
+        integration: {
+          isConnected: boolean;
+          settings:
+            | IPaymentIntegration
+            | IDeliveryIntegration
+            | IChatBotIntegration;
+          name: string;
+          _id?: string;
+        };
       }>;
     } = await api.get(`/get-integrations/${integrationId}`, {
       headers: { Authorization: this.getSessionToken },
@@ -320,10 +362,20 @@ export class StoreBuild {
     const res: {
       data: apiResponse<{
         totalProducts: number;
-        digitalProducts: number;
-        lowStockProducts: number;
-        outOfStockProducts: number;
         products: IProduct[];
+        filters: {
+          priceRange: {
+            min: number;
+            max: number;
+          };
+          allColors: IAvailableColors[];
+          allSizes: string[];
+          ratingsDistribution: Record<number, number>;
+        };
+        // Optional metrics for authenticated users
+        digitalProducts?: number;
+        lowStockProducts?: number;
+        outOfStockProducts?: number;
       }>;
     } = await api.get(`/get-products/?${q}`, {
       headers: { Authorization: this.getSessionToken },
@@ -410,7 +462,110 @@ export class StoreBuild {
 
     return res.data;
   }
+
+  async getCustomers(search: string, page = 1, limit = 10, sort = "") {
+    const q = queryString.stringify({ search, page, limit, sort });
+
+    const res: {
+      data: apiResponse<CustomersResponse>;
+    } = await api.get(`/get-customers/?${q}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async getCustomer(email: string) {
+    const res: { data: apiResponse<Customer & { orders: IOrder[] }> } =
+      await api.get(`/get-customers/${email}/`, {
+        headers: { Authorization: this.getSessionToken },
+      });
+    return res.data;
+  }
+
+  async getStore(storeCode?: string) {
+    const q = queryString.stringify({ storeCode });
+    const res: { data: apiResponse<IStore> } = await api.get(
+      `/get-store/?${q}`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    this.saveCurrentStoreCodeInCookie = res.data.data.storeCode!;
+
+    return res.data;
+  }
+
+  async editStore(updates: Partial<IStore>, partial = false) {
+    const res: { data: apiResponse<IStore> } = await api.post(
+      `/edit-store/`,
+      { updates, partial },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  async getThemes() {
+    const res: { data: apiResponse<IStoreTheme[]> } = await api.get(
+      `/get-themes/`
+    );
+
+    return res.data;
+  }
+
+  async getProductReview(storeId: string, productId: string, size = 10) {
+    const q = queryString.stringify({ size });
+    const res: { data: apiResponse<IProductReview[]> } = await api.get(
+      `/get-product-review/${storeId}/${productId}/?${q}`
+    );
+    return res.data;
+  }
+
+  async writeReviewOnProduct(payload: IRating) {
+    const res: { data: apiResponse<IRating> } = await api.post(
+      "/write-review-on-product/",
+      payload
+    );
+
+    return res.data;
+  }
 }
+
+export const getProductPrice = (product: IProduct, size: string) => {
+  let price: number | undefined = 0;
+
+  if (!size) {
+    price = product.discount || product.price.default;
+  } else {
+    price = product.price.sizes.find((s) => s[size])?.[size];
+  }
+
+  return price || 0;
+};
+
+export function generateTailwindClasses(primaryColor: string) {
+  // Define the color variants based on Tailwind's naming convention
+  const classes = {
+    bg: {
+      default: `bg-[${primaryColor}]`,
+      light: `bg-[${primaryColor}]`,
+      dark: `bg-[${primaryColor}]`,
+      darker: `bg-[${primaryColor}]`,
+      lightest: `bg-[${primaryColor}]`,
+    },
+    text: {
+      default: `text-[${primaryColor}]`,
+      dark: `text-[${primaryColor}]`, // Adjust if necessary
+    },
+  };
+
+  return classes;
+}
+
+export const doesAllCategoriesHasImage = (categories: ICategory[]) => {
+  if (!categories.length) return false;
+
+  return categories.every((category) => Boolean(category.img));
+};
 
 export const uploadImage = async (file: File) => {
   const formData = new FormData();

@@ -16,11 +16,13 @@ import {
   Type,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 
 const TextEditor: React.FC<{
   onChange: (text: string) => void;
   text: string;
-}> = ({ onChange, text: t }) => {
+  className?: string;
+}> = ({ onChange, text: t, className }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -179,7 +181,10 @@ const TextEditor: React.FC<{
       </div>
       <div
         ref={editorRef}
-        className="p-4 min-h-[200px] prose prose-sm max-w-none focus:outline-none"
+        className={cn(
+          "p-4 min-h-[200px] prose prose-sm max-w-none focus:outline-none",
+          className
+        )}
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput} // Listen for content changes

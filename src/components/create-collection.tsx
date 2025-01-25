@@ -25,6 +25,7 @@ const CollectionForm = ({
   initialImage,
   onSave,
   onCancel,
+  pending = false,
 }: CollectionFormProps) => {
   const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(initialIcon);
@@ -98,8 +99,11 @@ const CollectionForm = ({
         >
           Cancel
         </Button>
-        <Button onClick={() => onSave(name, icon, image, slot)}>
-          Create Collection
+        <Button
+          disabled={pending}
+          onClick={() => onSave(name, icon, image, slot)}
+        >
+          {initialName ? "Edit" : "Create"} Collection
         </Button>
       </DialogFooter>
     </div>
@@ -108,12 +112,13 @@ const CollectionForm = ({
 
 export const CreateCollection: FC<
   {
-    id?: number;
+    id?: string;
     name?: string;
     icon?: string;
     image?: string;
   } & { children: ReactNode }
 > = ({ children, ...collection }) => {
+  const [pending, startTransition] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { user } = useStoreBuildState();
@@ -124,6 +129,7 @@ export const CreateCollection: FC<
     image: File | null,
     slot: string
   ) => {
+    startTransition(true);
     try {
       let img;
 
@@ -142,7 +148,11 @@ export const CreateCollection: FC<
         storeId: user?.storeId || "",
       };
 
-      await storeBuilder.createCategory(payload);
+      if (collection.id) {
+        await storeBuilder.editCategory(collection.id, { ...payload });
+      } else {
+        await storeBuilder.createCategory(payload);
+      }
 
       queryClient.invalidateQueries({
         queryKey: ["categories", user?.storeId],
@@ -162,6 +172,7 @@ export const CreateCollection: FC<
       });
     } finally {
       setIsOpen(false);
+      startTransition(false);
     }
   };
 
@@ -178,6 +189,7 @@ export const CreateCollection: FC<
           </DialogDescription>
         </DialogHeader>
         <CollectionForm
+          pending={pending}
           initialName={collection?.name || ""}
           initialIcon={collection?.icon || "ShoppingBag"}
           initialImage={collection?.image || ""}

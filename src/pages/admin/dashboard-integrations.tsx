@@ -96,8 +96,6 @@ export default function DashboardIntegrations() {
     </Card>
   );
 
-  console.log({ i });
-
   return (
     <Section className="min-h-screen">
       <div className="container mx-auto py-20">

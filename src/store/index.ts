@@ -7,6 +7,7 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
   isPaymentConfirmed: false,
   openAddPaymentDetailsModal: false,
   selectedProducts: [],
+  currentStore: undefined,
   onProductSelect(products) {
     set((state) => ({
       ...state,
@@ -51,6 +52,12 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
       selectedProducts: state.selectedProducts.filter(
         (product) => product._id !== productId
       ),
+    }));
+  },
+  setCurrentStore(currentStore) {
+    set((state) => ({
+      ...state,
+      currentStore,
     }));
   },
 }));

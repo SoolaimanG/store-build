@@ -8,6 +8,9 @@ import { Text } from "./text";
 import { formatAmountToNaira, isPathMatching } from "@/lib/utils";
 import { PATHS } from "@/types";
 import { AIChat } from "./ai-chat";
+import { Drawer, DrawerClose, DrawerContent, DrawerTrigger } from "./ui/drawer";
+import { ScrollArea } from "./ui/scroll-area";
+import { Link } from "react-router-dom";
 
 const DashBoardNavBar = () => {
   const isDesktop = useMediaQuery("(min-width: 767px)");
@@ -27,12 +30,12 @@ const DashBoardNavBar = () => {
       <div className="flex items-center md:gap-4 gap-2">
         <AIChat>
           <Button variant="shine" size="icon" className="rounded-full">
-            <Sparkles size={20} />
+            <Sparkles size={18} />
           </Button>
         </AIChat>
-        {isPathMatching(PATHS.STORE_FRONT) && !isDesktop && (
-          <Button size="sm" variant="outline">
-            Preview
+        {isPathMatching(PATHS.STORE_FRONT) && (
+          <Button asChild size="sm" variant="outline">
+            <Link to={PATHS.STORE + user?.storeCode}>Preview</Link>
           </Button>
         )}
         {balanceUI}

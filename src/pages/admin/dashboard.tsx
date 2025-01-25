@@ -284,7 +284,9 @@ export function RecentSales({ className }: { className?: string }) {
                   </p>
                 </div>
               </div>
-              <p className="font-medium">{order.amountPaid}</p>
+              <p className="font-medium text-yellow-700">
+                {order.amountPaid || "Waiting for payment.."}
+              </p>
             </motion.div>
           ))
         ) : (
@@ -447,7 +449,7 @@ function RecentOrder({ className }: { className?: string }) {
                   <span className="font-medium">
                     {order.customerDetails.name}
                   </span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-[12px] text-muted-foreground line-clamp-1">
                     {order.note}
                   </span>
                 </div>

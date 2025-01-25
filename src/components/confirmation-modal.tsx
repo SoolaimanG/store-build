@@ -5,40 +5,56 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IProduct } from "@/types";
+import { ReactNode, useState } from "react";
 
 interface ConfirmationModalProps {
-  product: IProduct | null;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   onConfirm: () => void;
+  message?: string;
+  title?: string;
+  children?: ReactNode;
 }
 
 export function ConfirmationModal({
-  product,
-  isOpen,
-  onClose,
+  isOpen = false,
+  onClose = () => {},
   onConfirm,
+  message = "Are you sure you want to delete the produce? This action cannot be undone.",
+  title = "Delete",
+  children = <div />,
 }: ConfirmationModalProps) {
-  if (!product) return null;
+  const [open, setOpen] = useState(isOpen);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(e) => {
+        setOpen(e);
+        onClose();
+      }}
+    >
+      <DialogTrigger>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Product</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete the product "{product.productName}"?
-            This action cannot be undone.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2">
-          <Button onClick={onClose} variant="outline">
-            Cancel
-          </Button>
-          <Button onClick={onConfirm} variant="destructive">
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            variant="destructive"
+          >
             Delete
           </Button>
         </DialogFooter>

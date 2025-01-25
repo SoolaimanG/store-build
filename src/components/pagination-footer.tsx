@@ -54,7 +54,13 @@ export const PaginationFooter: FC<{ maxPagination?: number }> = ({
         <PaginationItem>
           <PaginationNext
             className=" cursor-pointer"
-            onClick={() => onPageChange(parseInt(page) + 1)}
+            onClick={() =>
+              onPageChange(
+                parseInt(page) < maxPagination
+                  ? parseInt(page) + 1
+                  : parseInt(page)
+              )
+            }
           />
         </PaginationItem>
       </PaginationContent>

@@ -108,6 +108,7 @@ const MobileNavBar = () => {
 
 export const LandingPageNavBar: FC = () => {
   const isMobile = useMediaQuery("(max-width:767px)");
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <Section className="flex items-center justify-between">
@@ -144,7 +145,11 @@ export const LandingPageNavBar: FC = () => {
       >
         {" "}
         <Button asChild variant="outline" className="rounded-full">
-          <Link to={PATHS.SIGNUP}>Let's do it</Link>
+          {isAuthenticated ? (
+            <Link to={PATHS.DASHBOARD}>Dashboard</Link>
+          ) : (
+            <Link to={PATHS.SIGNUP}>Let's do it</Link>
+          )}
         </Button>
         <AnimatePresence>
           {isMobile && (

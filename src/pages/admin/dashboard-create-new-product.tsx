@@ -207,6 +207,21 @@ const ProductManagement = () => {
     }
   };
 
+  const {
+    isLoading: isLoadingRegions,
+    data: regionsData,
+    error: regionsError,
+  } = useQuery({
+    queryKey: ["integration", "kwik"],
+    queryFn: () => storeBuilder.getIntegration("kwik"),
+  });
+
+  const { data: integration } = regionsData || {};
+
+  // @ts-ignore
+  const r = integration?.integration?.settings as IDeliveryIntegration;
+  const regions = Array.from(new Set(r?.shippingRegions || []));
+
   const onSubmit = async (isActive = true) => {
     const values = form.getValues();
 
@@ -256,7 +271,8 @@ const ProductManagement = () => {
           isFreeShipping: values?.shippingDetails?.isFreeShipping || false,
           shipAllRegion: values?.shipAllRegion || false,
           shippingCost: values?.shippingDetails?.shippingCost || 0,
-          shippingRegions: values.shippingRegions || [],
+          shippingRegions:
+            (values?.shipAllRegion ? regions : values.shippingRegions) || [],
         },
         storeId: user?.storeId || "",
         dimensions: {
@@ -343,15 +359,6 @@ const ProductManagement = () => {
 
   const { data: categories } = categoriesData || {};
 
-  const {
-    isLoading: isLoadingRegions,
-    data: regionsData,
-    error: regionsError,
-  } = useQuery({
-    queryKey: ["integration", "kwik"],
-    queryFn: () => storeBuilder.getIntegration("kwik"),
-  });
-
   useEffect(() => {
     if (product) {
       const colors = product.availableColors.map((color) => ({
@@ -405,12 +412,6 @@ const ProductManagement = () => {
   }, [product, form, categoriesData]);
 
   useToastError(regionsError || categoriesError || error);
-
-  const { data: integration } = regionsData || {};
-
-  // @ts-ignore
-  const r = integration?.integration?.settings as IDeliveryIntegration;
-  const regions = Array.from(new Set(r?.shippingRegions || []));
 
   return (
     <Section className="max-w-7xl mx-auto p-6">

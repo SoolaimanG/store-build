@@ -32,6 +32,7 @@ import {
   buttonVariants,
   containerVariants,
   formAnimation,
+  fullNameSchema,
   itemVariants,
   pageTransition,
   pageVariants,
@@ -145,6 +146,90 @@ const EnterStoreName: FC<IStepProps> = ({ onNext, onBack, data }) => {
   );
 };
 
+const EnterFullName: FC<IStepProps> = ({ onNext, onBack, data }) => {
+  const form = useForm<z.infer<typeof fullNameSchema>>({
+    resolver: zodResolver(fullNameSchema),
+    defaultValues: {
+      fullName: data.fullName,
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof fullNameSchema>) {
+    onNext(values);
+  }
+
+  return (
+    <motion.div
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className="space-y-3"
+    >
+      <header className="items-start justify-start w-full flex flex-col">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button variant="link" onClick={onBack} className="px-0">
+            <ChevronLeft />
+            Back
+          </Button>
+        </motion.div>
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-3xl font-semibold"
+        >
+          Full Name
+        </motion.h1>
+      </header>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <motion.div {...formAnimation}>
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      autoComplete="off"
+                      placeholder="type here"
+                      {...field}
+                      className="w-full py-6 px-4 text-4xl md:text-4xl border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 caret-primary"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500" />
+                </FormItem>
+              )}
+            />
+          </motion.div>
+          <motion.div
+            {...buttonAnimation}
+            className="flex items-center w-full justify-center gap-3"
+          >
+            <Button
+              type="submit"
+              variant="ringHover"
+              className="rounded-full h-[3rem] w-[9rem]"
+            >
+              Next
+            </Button>
+            <div className="flex items-center gap-1 font-medium">
+              <CornerDownLeft size={17} />
+              <Text>Or Press Enter</Text>
+            </div>
+          </motion.div>
+        </form>
+      </Form>
+    </motion.div>
+  );
+};
+
 const SelectProductYouSell: FC<IStepProps> = ({ onBack, onNext, data }) => {
   const { setOpenOTPValidator } = useStoreBuildState();
   const {
@@ -172,7 +257,8 @@ const SelectProductYouSell: FC<IStepProps> = ({ onBack, onNext, data }) => {
       const res = await storeBuilder.signUp(
         payload.email!,
         payload.storeName!,
-        payload.productType
+        payload.productType,
+        payload.fullName!
       );
       console.log(res.data);
       onNext(values);
@@ -375,6 +461,7 @@ export default function SignUp() {
     email: "",
     storeName: "",
     productType: "",
+    fullName: "",
   });
   const location = useLocation();
   const navigate = useNavigate();
@@ -382,6 +469,7 @@ export default function SignUp() {
   const steps = [
     (props: IStepProps) => <EnterEmail {...props} />,
     (props: IStepProps) => <EnterStoreName {...props} />,
+    (props: IStepProps) => <EnterFullName {...props} />,
     (props: IStepProps) => <SelectProductYouSell {...props} />,
     (props: IStepProps) => <AccountCreated {...props} />,
   ];
@@ -410,13 +498,13 @@ export default function SignUp() {
       const nextPage = currentPage + 1;
       const updatedData = { ...data, ...newData };
       if (nextPage < steps.length) {
+        console.log(nextPage, steps.length);
         setCurrentPage(nextPage);
         setData(updatedData);
         const key = Object.keys(newData)[0] as keyof ISignUp;
         navigate(`?${addQueryParameter(key, updatedData[key])}`);
       }
     } catch (error) {
-      console.log(error);
       const _error = errorMessageAndStatus(error);
       toast({
         title: _error.status,
@@ -447,10 +535,12 @@ export default function SignUp() {
       setCurrentPage(0);
     } else if (!query.storeName) {
       setCurrentPage(1);
-    } else if (!query.productType) {
+    } else if (!query.fullName) {
       setCurrentPage(2);
-    } else {
+    } else if (!query.productType) {
       setCurrentPage(3);
+    } else {
+      setCurrentPage(4);
     }
   }, [location.search]);
 

@@ -10,8 +10,8 @@ const LandingPage = () => {
   return (
     <div className="overflow-x-hidden">
       <LandingPageNavBar />
+      <LandingPageHeroSection />
       <Section>
-        <LandingPageHeroSection />
         <LandingPageFeatures />
         <LandingPagePricing />
         <LandingPageNewsLetter />

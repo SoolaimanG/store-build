@@ -12,18 +12,26 @@ import {
   ImageIcon,
   Layout,
   Link,
+  Loader2,
   PackageOpen,
+  Pencil,
   Plus,
   RocketIcon,
   Sparkles,
   Star,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, FC, useEffect } from "react";
 import { motion } from "framer-motion";
-import { cn, getInitials } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  cn,
+  errorMessageAndStatus,
+  getInitials,
+  storeBuilder,
+  uploadImage,
+} from "@/lib/utils";
 import queryString from "query-string";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -33,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -52,8 +61,11 @@ import {
   IProductToShow,
   ISection,
   ISortBy,
+  IStore,
   IStoreFeatureProps,
   IStoreFeatures,
+  IStoreHeroSection,
+  IStoreTheme,
 } from "@/types";
 import { Text } from "@/components/text";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -65,10 +77,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToastError } from "@/hooks/use-toast-error";
+import { toast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SaveChanges } from "@/components/save-store-front-changes";
+import { useStoreBuildState } from "@/store";
+import { ProductSelector } from "@/components/product-selector";
+import { ImageUploader } from "@/components/image-uploader";
 
 interface Tab {
   label: string;
-  content: React.ReactNode;
+  content:
+    | React.FC<{
+        store: Partial<IStore>;
+      }>
+    | React.FC<{
+        store?: Partial<IStore>;
+      }>;
   path: string;
 }
 
@@ -76,24 +102,29 @@ interface AnimatedTabsProps {
   tabs: Tab[];
 }
 
-const themes = [
-  { name: "Modern Purple", primary: "#8B5CF6", secondary: "#C4B5FD" },
-  { name: "Ocean Blue", primary: "#3B82F6", secondary: "#93C5FD" },
-  { name: "Forest Green", primary: "#10B981", secondary: "#6EE7B7" },
-  { name: "Sunset Orange", primary: "#F97316", secondary: "#FDBA74" },
-  { name: "Berry Red", primary: "#EF4444", secondary: "#FCA5A5" },
-];
-
-const StoreFrontSettings = () => {
-  const [profilePicture, setProfilePicture] = useState("/placeholder.svg");
+const StoreFrontSettings: FC<{ store: Partial<IStore> }> = ({ store }) => {
+  const [profilePicture, setProfilePicture] = useState(
+    store.customizations?.logoUrl || ""
+  );
   const [isHovered, setIsHovered] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedTheme, setSelectedTheme] = useState("");
+  const [selectedTheme, setSelectedTheme] = useState(
+    store.customizations?.theme
+  );
+  const [settings, setSettings] = useState<Partial<IStore>>({
+    isActive: store.isActive,
+    storeName: store.storeName,
+    aboutStore: store.aboutStore,
+    description: store.description,
+  });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfilePicture(e.target?.result as string);
@@ -106,8 +137,38 @@ const StoreFrontSettings = () => {
     if (imageUrl) {
       setProfilePicture(imageUrl);
       setImageUrl("");
+      setIsDialogOpen(false);
     }
   };
+
+  const handleFileSubmit = async () => {
+    try {
+      if (selectedFile) {
+        const res = await uploadImage(selectedFile);
+        setProfilePicture(res.data.display_url);
+
+        toast({
+          title: "Profile picture updated",
+          description: "Your profile picture has been updated successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "ERROR",
+        description: "Something went wrong",
+      });
+    }
+  };
+
+  const { isLoading, error, data } = useQuery({
+    queryKey: ["themes"],
+    queryFn: () => storeBuilder.getThemes(),
+  });
+
+  const { data: themes } = data || {};
+
+  useToastError(error);
+
   return (
     <section>
       <h2 className="text-2xl font-semibold">Store Settings</h2>
@@ -116,60 +177,104 @@ const StoreFrontSettings = () => {
           <div
             className="relative w-32 h-32 rounded-full overflow-hidden"
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseLeave={() => {
+              setIsHovered(false);
+              setIsDialogOpen(false);
+            }}
           >
             <Avatar className="w-full h-full object-cover">
               <AvatarImage src={profilePicture} alt="Store Logo" />
-              <AvatarFallback>
-                {getInitials("Soolaiman Abuabakar")}
-              </AvatarFallback>
+              <AvatarFallback>{getInitials(store.storeName)}</AvatarFallback>
             </Avatar>
 
             {isHovered && (
-              <Dialog>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center cursor-pointer">
                     <Camera className="text-white w-8 h-8" />
                     <p className="text-sm">Update Logo</p>
                   </div>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Update Profile Picture</DialogTitle>
+                    <DialogDescription>
+                      Choose a new profile picture by uploading a file or
+                      providing a URL.
+                    </DialogDescription>
                   </DialogHeader>
-                  <Tabs defaultValue="upload">
+                  <Tabs defaultValue="upload" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="upload">Upload</TabsTrigger>
                       <TabsTrigger value="url">URL</TabsTrigger>
                     </TabsList>
                     <TabsContent value="upload">
-                      <div className="flex flex-col items-center">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                          accept="image/*"
-                          className="hidden"
-                        />
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="flex items-center justify-center w-full">
+                          <Label
+                            htmlFor="dropzone-file"
+                            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Upload className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+                              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span className="font-semibold">
+                                  Click to upload
+                                </span>{" "}
+                                or drag and drop
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                SVG, PNG, JPG or GIF (MAX. 800x400px)
+                              </p>
+                            </div>
+                            <input
+                              id="dropzone-file"
+                              type="file"
+                              className="hidden"
+                              ref={fileInputRef}
+                              onChange={handleFileChange}
+                              accept="image/*"
+                            />
+                          </Label>
+                        </div>
+                        {selectedFile && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-500">
+                              {selectedFile.name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedFile(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                         <Button
+                          className="w-full"
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="mb-2"
+                          onClick={handleFileSubmit}
+                          disabled={!selectedFile}
                         >
-                          <Upload className="mr-2 h-4 w-4" /> Choose File
+                          Upload Image
                         </Button>
                       </div>
                     </TabsContent>
                     <TabsContent value="url">
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center space-y-4">
                         <Input
                           type="url"
                           placeholder="Enter image URL"
                           value={imageUrl}
                           onChange={(e) => setImageUrl(e.target.value)}
-                          className="mb-2"
+                          className="w-full"
                         />
-                        <Button type="button" onClick={handleUrlSubmit}>
+                        <Button
+                          type="button"
+                          onClick={handleUrlSubmit}
+                          disabled={!imageUrl}
+                        >
                           <Link className="mr-2 h-4 w-4" /> Set Image URL
                         </Button>
                       </div>
@@ -190,22 +295,41 @@ const StoreFrontSettings = () => {
               Enable or disable your store
             </div>
           </div>
-          <Switch />
+          <Switch
+            checked={settings.isActive}
+            onCheckedChange={(e) => setSettings({ ...settings, isActive: e })}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="storeName">Store Name</Label>
-          <Input id="storeName" placeholder="Enter your store name" />
+          <Input
+            value={settings.storeName}
+            onChange={(e) =>
+              setSettings({ ...settings, storeName: e.target.value })
+            }
+            id="storeName"
+            placeholder="Enter your store name"
+          />
         </div>
 
         <div className="space-y-2">
           <Label>About Us</Label>
-          <TextEditor />
+          <TextEditor
+            className="text-sm"
+            onChange={(e) => setSettings({ ...settings, aboutStore: e })}
+            text={settings.aboutStore || ""}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Textarea
+            value={settings.description}
+            className="text-sm"
+            onChange={(e) =>
+              setSettings({ ...setSettings, description: e.target.value })
+            }
             id="description"
             placeholder="Enter a short description of your store"
             rows={4}
@@ -216,30 +340,44 @@ const StoreFrontSettings = () => {
           <Label>Theme</Label>
 
           <div className="flex items-center gap-4 flex-wrap">
-            {themes.map((theme, idx) => (
-              <div key={idx} onClick={() => setSelectedTheme(theme.name)}>
-                <div className="flex items-center">
-                  <div className="flex cursor-pointer w-full relative">
-                    {theme.name === selectedTheme && (
-                      <div className=" absolute w-full h-full flex items-center justify-center">
-                        <CheckIcon />
+            {isLoading
+              ? [1, 2, 3, 5].map((_) => (
+                  <Skeleton key={_} className="w-24 h-10" />
+                ))
+              : themes?.map((theme, idx) => (
+                  <div key={idx} onClick={() => setSelectedTheme(theme)}>
+                    <div className="flex items-center">
+                      <div className="flex cursor-pointer w-full relative">
+                        {theme.id === selectedTheme?.id && (
+                          <div className=" absolute w-full h-full flex items-center justify-center">
+                            <CheckIcon />
+                          </div>
+                        )}
+                        <div
+                          className="w-10 h-10"
+                          style={{ backgroundColor: theme.primary }}
+                        />
+                        <div
+                          className="w-10 h-10"
+                          style={{ backgroundColor: theme.secondary }}
+                        />
                       </div>
-                    )}
-                    <div
-                      className="w-10 h-10"
-                      style={{ backgroundColor: theme.primary }}
-                    />
-                    <div
-                      className="w-10 h-10"
-                      style={{ backgroundColor: theme.secondary }}
-                    />
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))}
           </div>
         </div>
-        <Button className="w-full">Save</Button>
+        <SaveChanges
+          updates={{
+            ...settings,
+            // @ts-ignore
+            customizations: {
+              ...store.customizations,
+              logoUrl: profilePicture,
+              theme: selectedTheme as IStoreTheme,
+            },
+          }}
+        />
       </form>
     </section>
   );
@@ -252,16 +390,17 @@ interface ProductPageCustomizations {
   havePagination: boolean;
 }
 
-function StoreFrontProductsPage() {
+const StoreFrontProductsPage: FC<{ store: Partial<IStore> }> = ({ store }) => {
   const [customizations, setCustomizations] =
     useState<ProductPageCustomizations>({
-      canFilter: true,
-      canSearch: true,
-      sort: ["price", "name"],
-      havePagination: true,
+      canFilter: store.customizations?.productsPages.canFilter || false,
+      canSearch: store.customizations?.productsPages.canSearch || false,
+      sort: store.customizations?.productsPages.sort || ["price", "name"],
+      havePagination:
+        store.customizations?.productsPages.havePagination || false,
     });
 
-  const sortOptions: ISortBy[] = ["price", "name", "date"];
+  const sortOptions: ISortBy[] = ["price", "name", "date", "discount"];
 
   const handleToggle = (key: keyof ProductPageCustomizations) => {
     setCustomizations((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -274,11 +413,6 @@ function StoreFrontProductsPage() {
         ? prev.sort.filter((s) => s !== sortBy)
         : [...prev.sort, sortBy],
     }));
-  };
-
-  const handleSubmit = () => {
-    console.log("Submitting customizations:", customizations);
-    // Here you would typically send this data to your backend or state management system
   };
 
   return (
@@ -397,19 +531,32 @@ function StoreFrontProductsPage() {
             Sort Options: {customizations.sort.length}
           </Badge>
         </div>
-        <Button onClick={handleSubmit} className="w-full">
-          Save
-        </Button>
+        <SaveChanges
+          updates={{
+            // @ts-ignore
+            customizations: {
+              ...store.customizations,
+              productsPages: {
+                ...store.customizations?.productsPages,
+                canFilter: customizations.canFilter,
+                canSearch: customizations.canSearch,
+                sort: customizations.sort,
+                havePagination: customizations.havePagination,
+              },
+            },
+          }}
+        />
       </div>
     </div>
   );
-}
+};
 
-function StoreFrontProductPage() {
+const StoreFrontProductPage: FC<{ store: Partial<IStore> }> = ({ store }) => {
   const [style, setStyle] = useState<IProductPage>({
-    showSimilarProducts: true,
-    style: "one",
-    showReviews: true,
+    showSimilarProducts:
+      store.customizations?.productPage.showSimilarProducts || false,
+    style: store.customizations?.productPage.style || "one",
+    showReviews: store.customizations?.productPage.showReviews || false,
   });
 
   const handleToggle = (key: keyof IProductPage) => {
@@ -418,11 +565,6 @@ function StoreFrontProductPage() {
 
   const handleStyleChange = (newStyle: IDisplayStyle) => {
     setStyle((prev) => ({ ...prev, style: newStyle }));
-  };
-
-  const handleSubmit = () => {
-    console.log("Submitting product page style:", style);
-    // Here you would typically send this data to your backend or state management system
   };
 
   return (
@@ -504,25 +646,38 @@ function StoreFrontProductPage() {
           <Badge variant="outline" className="rounded-sm border-2">
             Reviews: {style.showReviews ? "Shown" : "Hidden"}
           </Badge>
-          <Badge variant="outline" className="rounded-sm border-2">
+          <Badge variant="outline" className="rounded-sm border-2 capitalize">
             Display Style: {style.style}
           </Badge>
         </div>
-        <Button onClick={handleSubmit} className="w-full">
-          Save
-        </Button>
+        <SaveChanges
+          updates={{
+            // @ts-ignore
+            customizations: {
+              ...store.customizations,
+              productPage: {
+                ...store.customizations?.productPage,
+                showReviews: style.showReviews,
+                showSimilarProducts: style.showSimilarProducts,
+                style: style.style,
+              },
+            },
+          }}
+        />
       </footer>
     </div>
   );
-}
+};
 
-function StoreFrontSectionManager() {
-  const [sections, setSections] = useState<ISection[]>([]);
+const StoreFrontSectionManager: FC<{ store: Partial<IStore> }> = ({
+  store,
+}) => {
+  const [sections, setSections] = useState<ISection[]>(store.sections || []);
   const [editingSection, setEditingSection] = useState<ISection | null>(null);
 
   const handleAddSection = () => {
     const newSection: ISection = {
-      _id: Date.now().toString(),
+      _id: editingSection?._id,
       header: "",
       products: "random",
       display: "grid",
@@ -540,15 +695,6 @@ function StoreFrontSectionManager() {
     if (editingSection?._id === id) {
       setEditingSection(null);
     }
-  };
-
-  const handleSaveSection = (updatedSection: ISection) => {
-    setSections(
-      sections.map((section) =>
-        section._id === updatedSection._id ? updatedSection : section
-      )
-    );
-    setEditingSection(null);
   };
 
   return (
@@ -569,31 +715,36 @@ function StoreFrontSectionManager() {
             </div>
           ) : (
             <div className="space-y-4 mt-3 w-full">
-              {sections.map((section) => (
-                <Card key={section._id}>
+              {sections.map((section, idx) => (
+                <Card key={idx}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <h2 className="text-sm font-medium">
                       {section.header || "Untitled Section"}
                     </h2>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleEditSection(section)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
+                      <SaveChanges
+                        size="sm"
                         variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteSection(section._id)}
+                        onSave={() => handleDeleteSection(section._id || "")}
+                        updates={{
+                          sections: store?.sections?.filter(
+                            (s) => s._id !== section?._id
+                          ),
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </SaveChanges>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground capitalize">
                       Products: {section.products}, Display: {section.display}
                     </p>
                   </CardContent>
@@ -609,7 +760,7 @@ function StoreFrontSectionManager() {
         </footer>
       </div>
 
-      {editingSection && (
+      {editingSection && !!sections.length && (
         <Card>
           <CardHeader>
             <h2 className="text-xl font-semibold">
@@ -673,25 +824,36 @@ function StoreFrontSectionManager() {
             <Button variant="outline" onClick={() => setEditingSection(null)}>
               Cancel
             </Button>
-            <Button onClick={() => handleSaveSection(editingSection)}>
-              Save Section
-            </Button>
+            <SaveChanges
+              onSave={(store) => setSections(store.sections)}
+              updates={{
+                sections: sections.map((section) =>
+                  section._id === editingSection._id ? editingSection : section
+                ),
+              }}
+              btnText="Save Section"
+              className="w-fit"
+            />
           </CardFooter>
         </Card>
       )}
     </div>
   );
-}
+};
 
-function StoreFrontFeaturesSectionManager() {
+const StoreFrontFeaturesSectionManager: FC<{ store: Partial<IStore> }> = ({
+  store,
+}) => {
+  const queryClient = useQueryClient();
   const [featuresSection, setFeaturesSection] = useState<IStoreFeatureProps>({
-    showFeatures: true,
-    features: [],
-    style: "one",
+    showFeatures: store.customizations?.features.showFeatures || false,
+    features: store.customizations?.features.features || [],
+    style: store.customizations?.features.style || "one",
   });
   const [editingFeature, setEditingFeature] = useState<IStoreFeatures | null>(
     null
   );
+  const [isPending, startTransition] = useState(false);
 
   const handleToggleFeatures = () => {
     setFeaturesSection((prev) => ({
@@ -706,7 +868,7 @@ function StoreFrontFeaturesSectionManager() {
 
   const handleAddFeature = () => {
     const newFeature: IStoreFeatures = {
-      _id: Date.now().toString(),
+      _id: editingFeature?._id,
       header: "",
       description: "",
       style: "one",
@@ -723,47 +885,96 @@ function StoreFrontFeaturesSectionManager() {
     setEditingFeature(feature);
   };
 
-  const handleDeleteFeature = (id: string) => {
-    setFeaturesSection((prev) => ({
-      ...prev,
-      features: prev.features.filter((feature) => feature._id !== id),
-    }));
-    if (editingFeature?._id === id) {
-      setEditingFeature(null);
+  const handleStoreUpdate = async (
+    updates: Partial<IStore>,
+    isToggle = true
+  ) => {
+    try {
+      startTransition(true);
+      const res = await storeBuilder.editStore(updates, true);
+
+      if (isToggle) {
+        handleToggleFeatures();
+      } else {
+        handleStyleChange(
+          updates.customizations?.features.style as IDisplayStyle
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["store"] });
+
+      toast({
+        title: "Success",
+        description: res.message,
+      });
+    } catch (error) {
+      const { message: description, status: title } =
+        errorMessageAndStatus(error);
+      toast({ title, description, variant: "destructive" });
+    } finally {
+      startTransition(false);
     }
   };
 
-  const handleSaveFeature = (updatedFeature: IStoreFeatures) => {
-    setFeaturesSection((prev) => ({
-      ...prev,
-      features: prev.features.map((feature) =>
-        feature._id === updatedFeature._id ? updatedFeature : feature
-      ),
-    }));
-    setEditingFeature(null);
-  };
+  const { data, error } = useQuery({
+    queryKey: ["integration", "unsplash"],
+    queryFn: () => storeBuilder.getIntegration("unsplash"),
+  });
+
+  const { data: integration } = data || {};
+  const unsplashIntegration = integration?.integration;
+
+  useToastError(error);
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-5">
+    <div className="space-y-5 w-full">
+      <div className="space-y-5 w-full">
         <header>
           <h2 className="text-2xl font-semibold">Features Section Manager</h2>
           <Text>Manage the features section of your store</Text>
         </header>
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           <div className="flex items-center justify-between">
             <Label htmlFor="show-features">Show Features Section</Label>
             <Switch
               id="show-features"
+              disabled={isPending}
               checked={featuresSection.showFeatures}
-              onCheckedChange={handleToggleFeatures}
+              onCheckedChange={(e) =>
+                handleStoreUpdate({
+                  // @ts-ignore
+                  customizations: {
+                    ...store.customizations,
+                    features: {
+                      ...(store.customizations?.features as IStoreFeatureProps),
+                      showFeatures: e,
+                    },
+                  },
+                })
+              }
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="section-style">Section Display Style</Label>
             <Select
+              disabled={isPending}
               value={featuresSection.style}
-              onValueChange={(value: IDisplayStyle) => handleStyleChange(value)}
+              onValueChange={(value: IDisplayStyle) => {
+                handleStoreUpdate(
+                  {
+                    // @ts-ignore
+                    customizations: {
+                      ...store.customizations,
+                      features: {
+                        ...(store.customizations
+                          ?.features as IStoreFeatureProps),
+                        style: value,
+                      },
+                    },
+                  },
+                  false
+                );
+              }}
             >
               <SelectTrigger id="section-style">
                 <SelectValue placeholder="Select display style" />
@@ -786,32 +997,48 @@ function StoreFrontFeaturesSectionManager() {
           ) : (
             <div className="space-y-4">
               {featuresSection.features.map((feature) => (
-                <Card key={feature._id}>
+                <Card key={feature._id} className="">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <h2 className="text-sm font-medium">
                       {feature.header || "Untitled Feature"}
                     </h2>
-                    <div className="flex space-x-2">
+                    <div className="flex">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleEditFeature(feature)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
+                      <SaveChanges
+                        onSave={(store) => {
+                          setFeaturesSection(
+                            store.customizations?.features as IStoreFeatureProps
+                          );
+                        }}
+                        updates={{
+                          // @ts-ignore
+                          customizations: {
+                            ...store.customizations,
+                            features: {
+                              ...(store.customizations
+                                ?.features as IStoreFeatureProps),
+                              features:
+                                store.customizations?.features.features.filter(
+                                  (f) => f._id !== feature._id
+                                ) || [],
+                            },
+                          },
+                        }}
+                        size="sm"
                         variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteFeature(feature._id)}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </SaveChanges>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {feature.description}
-                    </p>
+                    <Text className="text-xs">{feature.description}</Text>
                   </CardContent>
                 </Card>
               ))}
@@ -825,7 +1052,7 @@ function StoreFrontFeaturesSectionManager() {
         </footer>
       </div>
 
-      {editingFeature && (
+      {editingFeature && !!featuresSection.features.length && (
         <Card>
           <CardHeader>
             <h2>{editingFeature._id ? "Edit" : "Add"} Feature</h2>
@@ -891,9 +1118,11 @@ function StoreFrontFeaturesSectionManager() {
                     }
                     placeholder="Enter image URL"
                   />
-                  <Button type="button" size="sm">
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
+                  {unsplashIntegration?.isConnected && (
+                    <Button type="button" size="sm">
+                      <ImageIcon className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </form>
@@ -902,90 +1131,423 @@ function StoreFrontFeaturesSectionManager() {
             <Button variant="outline" onClick={() => setEditingFeature(null)}>
               Cancel
             </Button>
-            <Button onClick={() => handleSaveFeature(editingFeature)}>
+            <SaveChanges
+              onSave={(store) =>
+                setFeaturesSection(
+                  store.customizations?.features as IStoreFeatureProps
+                )
+              }
+              className="w-fit"
+              updates={{
+                // @ts-ignore
+                customizations: {
+                  ...store.customizations,
+                  features: {
+                    ...(store.customizations?.features as IStoreFeatureProps),
+                    features: featuresSection?.features?.map((feature) =>
+                      feature._id === editingFeature._id
+                        ? editingFeature
+                        : feature
+                    ),
+                  },
+                },
+              }}
+            >
               Save Feature
-            </Button>
+            </SaveChanges>
           </CardFooter>
         </Card>
       )}
     </div>
   );
-}
+};
+
+const StoreFrontHeroSection: FC<{ store: Partial<IStore> }> = ({ store }) => {
+  const [heroSection, setHeroSection] = useState<IStoreHeroSection>({
+    product: store.customizations?.hero?.product || "",
+    message: store.customizations?.hero?.message || "",
+    description: store.customizations?.hero?.description || "",
+    btnAction: store.customizations?.hero?.btnAction || "addToCart",
+    image: store.customizations?.hero?.image || "",
+    style: store.customizations?.hero?.style || "one",
+  });
+
+  const handleChange = (key: keyof IStoreHeroSection, value: string) => {
+    setHeroSection((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const { data, error } = useQuery({
+    queryKey: ["integration", "splash"],
+    queryFn: () => storeBuilder.getIntegration("unsplash"),
+  });
+
+  const { data: _data, error: productError } = useQuery({
+    queryKey: ["product", heroSection.product],
+    queryFn: () => storeBuilder.getProduct(heroSection.product || ""),
+    enabled: Boolean(heroSection.product),
+  });
+
+  useToastError(error || productError);
+
+  const { data: integration } = data || {};
+  const { data: product } = _data || {};
+
+  const _uploadImage = async (files: File[]) => {
+    try {
+      const {
+        data: { display_url },
+      } = await uploadImage(files[0]);
+      setHeroSection({ ...heroSection, image: display_url });
+
+      toast({
+        title: "SUCCESS",
+        description: "Image upload successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "ERROR",
+        description: "Something went wrong.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <header>
+        <h2 className="text-2xl font-semibold">Hero Section Manager</h2>
+        <Text>Customize your store's hero section</Text>
+      </header>
+
+      <Card>
+        <CardHeader>
+          <h3 className="text-lg font-semibold">Hero Content</h3>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="product">Featured Product</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="product"
+                value={heroSection.product}
+                readOnly
+                placeholder="Enter featured product name"
+              />
+              <ProductSelector
+                products={product ? [product] : []}
+                onSelect={(products) =>
+                  setHeroSection({
+                    ...heroSection,
+                    product: products[0]?._id || "",
+                  })
+                }
+              >
+                <Button
+                  size="sm"
+                  variant="gooeyLeft"
+                  className="w-1/3 text-[12px] md:text-sm"
+                >
+                  Select Product
+                </Button>
+              </ProductSelector>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="message">Hero Message</Label>
+            <Input
+              id="message"
+              value={heroSection.message}
+              onChange={(e) => handleChange("message", e.target.value)}
+              placeholder="Enter hero message"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={heroSection.description}
+              onChange={(e) => handleChange("description", e.target.value)}
+              placeholder="Enter hero description"
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="btnAction">Button Action</Label>
+            <Select
+              value={heroSection.btnAction}
+              onValueChange={(value: "addToCart" | "buyNow") =>
+                handleChange("btnAction", value)
+              }
+            >
+              <SelectTrigger id="btnAction">
+                <SelectValue placeholder="Select button action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="addToCart">Add to Cart</SelectItem>
+                <SelectItem value="buyNow">Buy Now</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-lg font-semibold">Display Style</Label>
+            <RadioGroup
+              value={heroSection.style}
+              onValueChange={(value: IDisplayStyle) =>
+                setHeroSection({ ...heroSection, style: value })
+              }
+              className="grid grid-cols-3 gap-4"
+            >
+              {(["one", "two", "three"] as IDisplayStyle[]).map(
+                (styleOption) => (
+                  <div key={styleOption}>
+                    <RadioGroupItem
+                      value={styleOption}
+                      id={styleOption}
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor={styleOption}
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <Layout className="mb-3 h-6 w-6" />
+                      <span className="capitalize">{styleOption}</span>
+                    </Label>
+                  </div>
+                )
+              )}
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">Hero Image</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                id="image"
+                readOnly
+                value={heroSection.image}
+                placeholder="Enter image URL"
+              />
+              <div>
+                <ImageUploader onUpload={_uploadImage}>
+                  <Button size="sm" className="text-[12.5px]">
+                    Upload Image
+                  </Button>
+                </ImageUploader>
+                {integration?.integration.isConnected && (
+                  <Button type="button" size="sm" variant="outline">
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <SaveChanges
+            updates={{
+              // @ts-ignore
+              customizations: {
+                ...store.customizations,
+                hero: {
+                  ...store.customizations?.hero,
+                  ...heroSection,
+                },
+              },
+            }}
+            className="w-full"
+          >
+            Save Hero Section
+          </SaveChanges>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
+
+const FooterManager: FC<{ store: Partial<IStore> }> = ({ store }) => {
+  const [footer, setFooter] = useState({
+    style: store.customizations?.footer.style,
+    showNewsletter: store.customizations?.footer.showNewsLetter,
+  });
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setFooter({ style: "one", showNewsletter: false });
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-5">
+        <header>
+          <h2 className="text-2xl font-semibold">Footer Manager</h2>
+          <p className="text-muted-foreground">Customize your store's footer</p>
+        </header>
+        <div>
+          {!footer ? (
+            <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 text-muted-foreground">
+              <PackageOpen className="h-12 w-12" />
+              <p>
+                No footer configuration yet. Click the button below to set up
+                your footer.
+              </p>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <h2 className="text-sm font-medium">Footer Configuration</h2>
+                <div className="flex items-center">
+                  <Button variant="ghost" size="sm" onClick={handleEdit}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground capitalize">
+                  Style: {footer.style}, Newsletter:{" "}
+                  {footer.showNewsletter ? "Shown" : "Hidden"}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+        {!footer && (
+          <footer>
+            <Button onClick={() => setIsEditing(true)} className="w-full">
+              <Plus className="mr-2 h-4 w-4" /> Set Up Footer
+            </Button>
+          </footer>
+        )}
+      </div>
+
+      {isEditing && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold">
+              {footer ? "Edit" : "Set Up"} Footer
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="style">Display Style</Label>
+                <Select
+                  value={footer.style}
+                  onValueChange={(value: IDisplayStyle) =>
+                    setFooter({ ...footer, style: value })
+                  }
+                >
+                  <SelectTrigger id="style">
+                    <SelectValue placeholder="Select display style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="one">One</SelectItem>
+                    <SelectItem value="two">Two</SelectItem>
+                    <SelectItem value="three">Three</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="newsletter"
+                  checked={footer.showNewsletter}
+                  onCheckedChange={(checked) =>
+                    setFooter({ ...footer, showNewsletter: checked })
+                  }
+                />
+                <Label htmlFor="newsletter">Show Newsletter</Label>
+              </div>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <SaveChanges
+              onSave={(store) => {
+                setFooter({
+                  style: store.customizations?.footer.style!,
+                  showNewsletter: store.customizations?.footer.showNewsLetter,
+                });
+                setIsEditing(false);
+              }}
+              updates={{
+                // @ts-ignore
+                customizations: {
+                  ...store.customizations,
+                  footer: {
+                    style: footer.style!,
+                    showNewsLetter: footer.showNewsletter!,
+                  },
+                },
+              }}
+              btnText="Save Footer"
+              className="w-fit"
+            />
+          </CardFooter>
+        </Card>
+      )}
+    </div>
+  );
+};
 
 const tabs = [
   {
     label: "Settings",
-    content: <StoreFrontSettings />,
+    content: StoreFrontSettings,
     path: "#settings",
   },
   {
+    label: "Hero",
+    content: StoreFrontHeroSection,
+    path: "#hero",
+  },
+  {
     label: "Collections",
-    content: <CollectionManager />,
+    content: CollectionManager,
     path: "#collections",
   },
   {
     label: "Products Page",
-    content: <StoreFrontProductsPage />,
+    content: StoreFrontProductsPage,
     path: "#products-page",
   },
   {
     label: "Product Details",
-    content: <StoreFrontProductPage />,
+    content: StoreFrontProductPage,
     path: "#product-details",
   },
   {
     label: "Sections",
-    content: <StoreFrontSectionManager />,
+    content: StoreFrontSectionManager,
     path: "#sections",
   },
   {
     label: "Features",
-    content: <StoreFrontFeaturesSectionManager />,
+    content: StoreFrontFeaturesSectionManager,
     path: "#features",
   },
   {
     label: "Footer",
-    content: <div>API settings content</div>,
+    content: FooterManager,
     path: "#footer",
   },
 ];
 
 function AnimatedTabs({ tabs }: AnimatedTabsProps) {
+  const { setCurrentStore } = useStoreBuildState();
   const location = useLocation();
   const n = useNavigate();
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const qs = queryString.parse(location.hash) as Record<string, string>;
-
-  useEffect(() => {
-    const tabsElement = tabsRef.current;
-    if (tabsElement) {
-      const handleScroll = () => {
-        setShowLeftArrow(tabsElement.scrollLeft > 0);
-        setShowRightArrow(
-          tabsElement.scrollLeft <
-            tabsElement.scrollWidth - tabsElement.clientWidth
-        );
-      };
-
-      tabsElement.addEventListener("scroll", handleScroll);
-      handleScroll(); // Check initial state
-
-      return () => tabsElement.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
-
-  const scrollTabs = (direction: "left" | "right") => {
-    const tabsElement = tabsRef.current;
-    if (tabsElement) {
-      const scrollAmount = tabsElement.clientWidth / 2;
-      tabsElement.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
 
   const verifyTabExist = (path: string) => {
     if (!tabs.find((tab) => tab.path === path)) return "#settings";
@@ -995,30 +1557,27 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
   const key = verifyTabExist("#" + Object.keys(qs)[0]);
   const currentTab = tabs.findIndex((_) => _.path === key);
 
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["store"],
+    queryFn: () => storeBuilder.getStore(),
+  });
+
+  useEffect(() => {
+    if (data?.data) {
+      setCurrentStore(data.data);
+    }
+  }, [data?.data]);
+
+  const { data: store } = data || {};
+
+  useToastError(error);
+
+  const page = tabs[currentTab];
+
   return (
-    <Card className="overflow-hidden p-0">
-      <CardHeader className="p-0 relative">
-        {showLeftArrow && (
-          <button
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-background/80 p-2 z-10"
-            onClick={() => scrollTabs("left")}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-        )}
-        {showRightArrow && (
-          <Button
-            variant="secondary"
-            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 z-10"
-            onClick={() => scrollTabs("right")}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        )}
-        <div
-          ref={tabsRef}
-          className="flex scrollbar-hide items-center gap-3 p-2"
-        >
+    <Card className="overflow-hidden md:p-6 w-full">
+      <CardHeader className="p-0 relative overflow-x-auto w-full">
+        <div ref={tabsRef} className="flex items-center gap-3 p-2">
           {tabs.map((tab, idx) => (
             <motion.div
               key={idx}
@@ -1028,20 +1587,25 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
               )}
               onClick={() => n(tab.path)}
             >
-              {tab.label}
+              {tab.label}{" "}
               {key === tab.path && (
                 <motion.div
                   className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
                   layoutId="activeTab"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
-              )}
+              )}{" "}
             </motion.div>
-          ))}
-        </div>
-      </CardHeader>
-      <CardContent className="mt-4">
-        <ScrollArea className="h-[30rem]">
+          ))}{" "}
+        </div>{" "}
+      </CardHeader>{" "}
+      <CardContent
+        className={cn(
+          "mt-4",
+          isLoading && "flex items-center justify-center mt-10 text-slate-800"
+        )}
+      >
+        <ScrollArea className={cn("h-[30rem]")}>
           <motion.div
             key={key}
             initial={{ opacity: 0, y: 10 }}
@@ -1049,10 +1613,14 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {tabs[currentTab].content}
-          </motion.div>
-        </ScrollArea>
-      </CardContent>
+            {isLoading ? (
+              <Loader2 size={100} className="animate-spin" />
+            ) : (
+              <page.content store={store || {}} key={store?._id} />
+            )}{" "}
+          </motion.div>{" "}
+        </ScrollArea>{" "}
+      </CardContent>{" "}
     </Card>
   );
 }
@@ -1068,20 +1636,10 @@ const DashboardStoreFront = () => {
         </Button>
       </header>
       <div className="md:flex md:flex-row w-full gap-5">
-        <div className="basis-[65%]">
-          <AnimatedTabs tabs={tabs} />
-        </div>
-
-        <div className="hidden md:basis-[35%] md:flex">
-          <StorePreview />
-        </div>
+        <AnimatedTabs tabs={tabs} />
       </div>
     </div>
   );
-};
-
-const StorePreview = () => {
-  return <div>Store Preview</div>;
 };
 
 export default DashboardStoreFront;

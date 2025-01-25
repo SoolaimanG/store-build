@@ -17,6 +17,7 @@ import FitnessTemplateImage from "@/assets/tech-template-img.jpeg";
 import { z } from "zod";
 import { Home, Users, Settings, ShoppingBag, Store } from "lucide-react";
 import { appConfig } from "./lib/utils";
+import { Variants } from "framer-motion";
 
 export const landingPageNavBarLinks = [
   {
@@ -440,6 +441,28 @@ export const iconList = [
   "ArrowUpDown",
 ];
 
+export const menu = (
+  storeCode: string,
+  payload?: { category?: string; trackOrder?: string }
+) => [
+  {
+    name: "About Us",
+    path: `${location.pathname}#about-us`,
+  },
+  {
+    name: "Collections",
+    path: `/store/${storeCode}/products/?category=${payload?.category}`,
+  },
+  {
+    name: "Products",
+    path: `/store/${storeCode}/products/`,
+  },
+  {
+    name: "Track Order",
+    path: `/store/${storeCode}/track-order/`,
+  },
+];
+
 // Schemas
 export const emailSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -447,6 +470,10 @@ export const emailSchema = z.object({
 
 export const storeNameSchema = z.object({
   storeName: z.string().min(1, { message: "Store name is required" }),
+});
+
+export const fullNameSchema = z.object({
+  fullName: z.string().max(30, "Name is too long").min(4, "Name is too short"),
 });
 
 export const productTypeSchema = z.object({
@@ -680,3 +707,27 @@ export const orderForm = (states?: string[], orderStatus = ["Pending"]) => [
     className: "lg:col-span-3 row-span-1",
   },
 ];
+
+export const fadeIn: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.3 } },
+};
+
+export const slideInFromTop: Variants = {
+  initial: { y: -20, opacity: 0 },
+  animate: { y: 0, opacity: 1, transition: { duration: 0.3 } },
+};
+
+export const slideInFromLeft: Variants = {
+  initial: { x: -20, opacity: 0 },
+  animate: { x: 0, opacity: 1, transition: { duration: 0.3 } },
+};
+
+export const popIn: Variants = {
+  initial: { scale: 0.95, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 300, damping: 25 },
+  },
+};

@@ -320,7 +320,6 @@ export function ProductTable({
         onClose={() => setIsViewDialogOpen(false)}
       />
       <ConfirmationModal
-        product={selectedProduct}
         isOpen={isConfirmationModalOpen}
         onClose={() => setIsConfirmationModalOpen(false)}
         onConfirm={handleDeleteProduct}

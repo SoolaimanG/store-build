@@ -19,6 +19,10 @@ import DashboardStoreFront from "./pages/admin/dashboard-store-front";
 import DashboardIntegrations from "./pages/admin/dashboard-integrations";
 import DashboardCreateNewProduct from "./pages/admin/dashboard-create-new-product";
 import DashboardCreateOrder from "./pages/admin/dashboard-create-order";
+import PreviewStore from "./pages/preview-store";
+import StoreProvider from "./store/store-provider";
+import StoreProducts from "./store/store-products";
+import StoreProductsDetails from "./store/store-products-details";
 
 NProgress.configure({ showSpinner: false });
 
@@ -124,6 +128,30 @@ function App() {
                   <DashboardProvider>
                     <DashboardCreateOrder />
                   </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE + ":storeCode"}
+                element={
+                  <StoreProvider>
+                    <PreviewStore />
+                  </StoreProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE + ":storeCode" + "/products/"}
+                element={
+                  <StoreProvider>
+                    <StoreProducts />
+                  </StoreProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE + ":storeCode" + "/products/" + ":productId"}
+                element={
+                  <StoreProvider>
+                    <StoreProductsDetails />
+                  </StoreProvider>
                 }
               />
             </Routes>

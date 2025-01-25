@@ -14,6 +14,7 @@ export enum PATHS {
   STORE_SETTINGS = "/store-settings/",
   STORE_CUSTOMERS = "/store-customers/",
   STORE_INTEGRATIONS = "/store-integrations/",
+  STORE = "/store/",
 }
 
 export type IDashboardMetrics = {
@@ -134,6 +135,7 @@ export type ISignUp = {
   email: string;
   storeName: string;
   productType: string;
+  fullName: string;
 };
 
 export type IProductTypes = {
@@ -152,9 +154,17 @@ export type IOtpValidator = {
   onError?: () => void;
 };
 
+export interface ICartItem {
+  productId: string;
+  color?: string;
+  size?: string;
+  quantity: number;
+}
+
 export type IUseStoreBuildTypes = {
   openOTPValidator: IOtpValidator;
   openAddPaymentDetailsModal: boolean;
+  currentStore?: IStore;
   setOpenAddPaymentDetailsModal: (prop: boolean) => void;
   setOpenOTPValidator: (prop: IOtpValidator) => void;
   user: IUser | null;
@@ -164,6 +174,18 @@ export type IUseStoreBuildTypes = {
   selectedProducts: IProduct[];
   onProductSelect: (products: IProduct[]) => void;
   removeProduct: (productId: string) => void;
+  setCurrentStore: (store: IStore) => void;
+};
+
+export type IProductReview = {
+  _id?: string;
+  createdAt: string;
+  updatedAt: string;
+  storeId: string;
+  note: string;
+  rating: number;
+  productId: string;
+  userEmail: string;
 };
 
 export type IJoinNewsLetterFrom = "modal" | "input";
@@ -219,6 +241,7 @@ export type IUser = {
   storeId: string;
   isActive: boolean;
   productType: string;
+  storeCode: string;
   balance?: number;
   paymentDetails: IPaymentDetails;
 } & ITimeStamp;
@@ -248,15 +271,15 @@ export type IDisplay = "grid" | "flex";
 export type IDisplayStyle = "one" | "two" | "three";
 
 export type IStoreFeatures = {
-  _id: string;
+  _id?: string;
   header: string;
-  description: string;
+  description?: string;
   style: IDisplayStyle;
   image: string;
 };
 
 export type ISection = {
-  _id: string;
+  _id?: string;
   header: string;
   products: IProductToShow;
   display: IDisplay;
@@ -268,16 +291,36 @@ export type IStoreFeatureProps = {
   style: IDisplayStyle;
 };
 
+export type IStoreStatus = "active" | "on-hold" | "banned";
+
 export type IProductPage = {
   showSimilarProducts: boolean;
   style: IDisplayStyle;
   showReviews: boolean;
 };
 
+export type IStoreTheme = {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+};
+
+export type IStoreHeroSection = {
+  product: string;
+  message: string;
+  description: string;
+  btnAction: "addToCart" | "buyNow";
+  image: string;
+  style: IDisplayStyle;
+};
+
 export type IStore = {
   _id?: string;
   storeName: string;
   productType: string;
+  status: IStoreStatus;
+  storeCode: string;
   templateId: string;
   aboutStore?: string;
   description?: string;
@@ -286,7 +329,8 @@ export type IStore = {
   paymentDetails: IPaymentDetails;
   customizations?: {
     logoUrl: string;
-    theme: string;
+    theme: IStoreTheme;
+    hero?: IStoreHeroSection;
     banner?: {
       type: IBannerType;
       product: string;
@@ -322,6 +366,7 @@ export interface CollectionFormProps {
   initialName: string;
   initialIcon: string;
   initialImage: string;
+  pending?: boolean;
   onSave: (
     name: string,
     icon: string,
@@ -402,6 +447,13 @@ export type getProductsTypes = {
   minPrice?: number;
   maxPrice?: number;
   size?: number;
+  productsToShow?: IProductToShow;
+  colors?: string[];
+  sizes?: string[];
+  gender?: IGender[];
+  rating?: number;
+  isActive?: boolean;
+  productIds?: string[];
 };
 
 export type ISaleData = {
@@ -459,6 +511,8 @@ export type ICategory = {
   icon: string;
   name: string;
   storeId: string;
+  description?: string;
+  productCount: number;
 };
 
 export type IProduct = {
@@ -485,6 +539,9 @@ export type IProduct = {
   dimensions?: IProductDimensions; // Physical dimensions of the product
   shippingDetails: IProductShippingDetails; // Shipping-related information
   isActive: boolean;
+  averageRating?: number;
+  totalReviews?: number;
+  lastReview?: IRating;
 } & ITimeStamp;
 
 export type IRating = {
@@ -525,3 +582,32 @@ export type IDeliveryIntegration = {
   deliveryNationwide: boolean;
   shippingRegions?: string[];
 };
+
+export type IUnsplashIntegration = {
+  numberOfImages: number;
+};
+
+export interface ICustomerStats {
+  label: string;
+  value: number;
+  percentage?: number;
+  formattedValue?: string; // Add this line
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  createdAt?: string;
+  amountSpent: number;
+  itemsBought: number;
+  lastPurchase: Date;
+}
+
+export interface CustomersResponse {
+  customerStats: ICustomerStats[];
+  customers: Customer[];
+  totalCustomers: number;
+  totalPages: number;
+}
