@@ -25,7 +25,6 @@ import StoreProducts from "./store/store-products";
 import StoreProductsDetails from "./store/store-products-details";
 import DashboardCoupon from "./pages/admin/dashboard-coupon";
 import StoreTrackOrder from "./store/store-track-order";
-import OrderTracking from "./components/order-detail";
 import StoreOrderDetail from "./store/store-order-detail";
 
 NProgress.configure({ showSpinner: false });
