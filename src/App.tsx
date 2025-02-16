@@ -26,6 +26,7 @@ import StoreProductsDetails from "./store/store-products-details";
 import DashboardCoupon from "./pages/admin/dashboard-coupon";
 import StoreTrackOrder from "./store/store-track-order";
 import StoreOrderDetail from "./store/store-order-detail";
+import DashboardSettings from "./pages/admin/dashboard-settings";
 
 NProgress.configure({ showSpinner: false });
 
@@ -179,6 +180,15 @@ function App() {
                   <StoreProvider>
                     <StoreOrderDetail />
                   </StoreProvider>
+                }
+              />
+
+              <Route
+                path={PATHS.STORE_SETTINGS}
+                element={
+                  <DashboardProvider>
+                    <DashboardSettings />
+                  </DashboardProvider>
                 }
               />
             </Routes>
