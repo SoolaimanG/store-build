@@ -48,7 +48,7 @@ export const appConfig = {
 };
 
 export const api = axios.create({
-  baseURL: "https://store-build-api.vercel.app/api/v1",
+  baseURL: import.meta.env.VITE_API + "/api/v1",
 });
 
 export const errorMessageAndStatus = (error: any) => {

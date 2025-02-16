@@ -17,7 +17,7 @@ export default function LandingPageFooter() {
             <h2 className="text-2xl font-semibold text-white">
               Subscribe to our newsletter
             </h2>
-            <p className="text-lg text-gray-400">
+            <p className="md:text-lg text-gray-400">
               The latest news, articles, and resources, sent to your inbox
               weekly.
             </p>
@@ -45,7 +45,8 @@ export default function LandingPageFooter() {
 
         <div className="mt-16 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-gray-400">
-            © 2024 {appConfig.name}, Inc. All rights reserved.
+            © {new Date().getFullYear()} {appConfig.name}, Inc. All rights
+            reserved.
           </p>
           <div className="flex gap-8">
             <Link

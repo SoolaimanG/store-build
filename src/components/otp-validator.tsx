@@ -112,7 +112,7 @@ const OtpValidator: FC = () => {
                     <InputOTPSlot
                       key={idx}
                       index={idx}
-                      className="h-[4rem] w-[4rem] text-2xl"
+                      className="md:h-[4rem] h-[3rem] w-[3rem] md:w-[4rem] text-2xl"
                     />
                   ))}
                 </InputOTPGroup>

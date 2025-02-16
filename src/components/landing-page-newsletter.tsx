@@ -20,7 +20,7 @@ export default function LandingPageNewsLetter() {
                 Nostrud amet eu ullamco nisi aute in ad minim nostrud
                 adipisicing velit quis. Duis tempor incididunt dolore.
               </p>
-              <div className="mt-6 flex max-w-md gap-x-2">
+              <div className="mt-6 flex w-full md:max-w-md gap-x-2">
                 <label htmlFor="email-address" className="sr-only">
                   Email address
                 </label>

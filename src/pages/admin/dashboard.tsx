@@ -43,7 +43,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useToastError } from "@/hooks/use-toast-error";
 import { IDashboardMetrics, PATHS } from "@/types";
 import MetricLoading from "@/components/loaders/metric-loading";
-import RecentOrdersLoading from "@/components/loaders/recent-orders-loading";
 import { format } from "date-fns";
 import { EmptyProductState } from "@/components/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -94,8 +93,8 @@ export default function Dashboard() {
       transition={{ duration: 0.5 }}
       className="p-3 max-w-[1400px] mx-auto space-y-6"
     >
-      <div className="flex justify-between items-center">
-        <div className="space-y-1 md:flex md:items-center md:gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-3 w-full sm:w-auto">
           <motion.h2
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -107,11 +106,16 @@ export default function Dashboard() {
           <Tabs
             defaultValue="all"
             value={timeRange}
-            onValueChange={handleTimeRangeChange}
+            className="w-full sm:w-auto"
           >
-            <TabsList>
+            <TabsList className="w-full sm:w-auto">
               {timeRanges.map((range) => (
-                <TabsTrigger key={range.value} value={range.value}>
+                <TabsTrigger
+                  key={range.value}
+                  value={range.value}
+                  className="flex-1 sm:flex-none"
+                  onClick={() => handleTimeRangeChange(range.value)}
+                >
                   {range.label}
                 </TabsTrigger>
               ))}
@@ -122,14 +126,13 @@ export default function Dashboard() {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="flex items-center gap-4"
+          className="w-full sm:w-auto"
         >
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="w-full sm:w-auto">
             <Link
               className="text-sm"
               to={PATHS.STORE_PRODUCTS + `${generateRandomString(24)}#new`}
             >
-              {" "}
               <Plus className="mr-2 h-4 w-4" />
               Add product
             </Link>
@@ -141,7 +144,7 @@ export default function Dashboard() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6, staggerChildren: 0.1 }}
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
       >
         <AnimatePresence mode="wait">
           {loadingMetrics ? (
@@ -156,13 +159,13 @@ export default function Dashboard() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="grid grid-cols-3 gap-3"
+        className="grid grid-cols-1 md:grid-cols-3 gap-3"
       >
-        <RecentOrder className="md:col-span-2 col-span-3" />
+        <RecentOrder className="md:col-span-2" />
         {user?.plan.type === "free" ? (
           <Chart />
         ) : (
-          <AISuggestion className="md:col-span-1 col-span-3" />
+          <AISuggestion className="md:col-span-1" />
         )}
       </motion.div>
 
@@ -175,13 +178,13 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">Recent Paid Orders</h3>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <RecentSales className="md:col-span-2 col-span-3" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <RecentSales className="md:col-span-2" />
           <PricingCard
             {...{ ...tiers[1], featured: false }}
             tierIdx={1}
             btnText="Upgrade to premium"
-            className="md:col-span-1 col-span-3 rounded-md sm:rounded-t-md lg:rounded-bl-md lg:rounded-tr-md sm:p-5"
+            className="md:col-span-1 rounded-md sm:rounded-t-md lg:rounded-bl-md lg:rounded-tr-md sm:p-5"
           />
         </div>
       </motion.div>
@@ -237,32 +240,31 @@ export function RecentSales({ className }: { className?: string }) {
   return (
     <Card className={cn("w-full p-0", className)}>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Recent Sales</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl font-bold">
+          Recent Sales
+        </CardTitle>
         <CardDescription>
           An overview of your most recent transactions.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-2">
         {isLoading ? (
-          <RecentOrdersLoading />
+          <RecentSalesLoading />
         ) : !!recentSales?.orders.length ? (
-          <ScrollArea className="h-[330px]">
+          <ScrollArea className="h-[330px] px-2">
             <AnimatePresence>
               {recentSales.orders.map((order, index) => (
                 <motion.div
                   key={order._id}
-                  className="flex items-center cursor-pointer justify-between p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors duration-200"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors duration-200 mb-2"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 mb-2 sm:mb-0">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        // src={`https://api.dicebear.com/6.x/initials/svg?seed=${order.customerDetails.name}`}
-                        alt={order.customerDetails.name}
-                      />
+                      <AvatarImage alt={order.customerDetails.name} />
                       <AvatarFallback>
                         {getInitials(order.customerDetails.name || "")}
                       </AvatarFallback>
@@ -276,8 +278,8 @@ export function RecentSales({ className }: { className?: string }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
+                  <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="text-left sm:text-right">
                       <p className="font-medium text-green-600">
                         {formatAmountToNaira(order.amountPaid || 0)}
                       </p>
@@ -316,6 +318,34 @@ export function RecentSales({ className }: { className?: string }) {
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+function RecentSalesLoading() {
+  return (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg animate-pulse"
+        >
+          <div className="flex items-center space-x-4 mb-2 sm:mb-0">
+            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="space-y-2 text-left sm:text-right">
+              <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+            </div>
+            <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -383,7 +413,7 @@ export function Chart({ className }: { className?: string }) {
   );
 }
 
-function RecentOrder({ className }: { className?: string }) {
+export function RecentOrder({ className }: { className?: string }) {
   const { isLoading, data, error } = useQuery({
     queryKey: ["orders"],
     queryFn: () => storeBuilder.getOrders(undefined, 0, 5, false),
@@ -396,19 +426,18 @@ function RecentOrder({ className }: { className?: string }) {
   return (
     <Card className={cn("space-y-4", className)}>
       <CardHeader>
-        <CardTitle>My Recent Orders</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">My Recent Orders</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
-          // Skeleton loading
           <RecentOrdersLoading />
         ) : recentOrders && recentOrders.orders.length > 0 ? (
           recentOrders.orders.map((order, i) => (
             <div
               key={i}
-              className="flex items-center justify-between p-4 rounded-lg border cursor-pointer"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border cursor-pointer space-y-2 sm:space-y-0"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
                 <div className="flex flex-col">
                   <span className="font-medium">
                     {formatAmountToNaira(order.totalAmount)}
@@ -434,8 +463,8 @@ function RecentOrder({ className }: { className?: string }) {
                   {order.paymentDetails.paymentStatus}
                 </Badge>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col text-right">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                <div className="flex flex-col text-left sm:text-right">
                   <span className="font-medium">
                     {order.customerDetails.name}
                   </span>
@@ -446,7 +475,7 @@ function RecentOrder({ className }: { className?: string }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-primary hover:text-primary/60"
+                  className="text-primary hover:text-primary/60 w-full sm:w-auto"
                   asChild
                 >
                   <Link to={PATHS.STORE_ORDERS + order._id}>View order</Link>
@@ -455,7 +484,6 @@ function RecentOrder({ className }: { className?: string }) {
             </div>
           ))
         ) : (
-          // Empty state
           <EmptyProductState
             icon={DollarSign}
             header="No recent orders"
@@ -474,6 +502,34 @@ function RecentOrder({ className }: { className?: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function RecentOrdersLoading() {
+  return (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border space-y-2 sm:space-y-0 animate-pulse"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <div className="flex flex-col">
+              <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded mt-1" />
+            </div>
+            <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <div className="flex flex-col text-left sm:text-right">
+              <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded mt-1" />
+            </div>
+            <div className="h-8 w-full sm:w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

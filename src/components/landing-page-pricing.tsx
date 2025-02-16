@@ -21,13 +21,13 @@ export default function LandingPagePricing() {
       <FadeInWhenVisible>
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-base/7 font-semibold text-primary">Pricing</h2>
-          <Text className="mt-2 text-balance text-5xl font-semibold tracking-tight text-gray-300 sm:text-6xl">
+          <Text className="mt-2 text-balance md:text-5xl text-3xl font-semibold tracking-tight text-gray-300 sm:text-6xl">
             Choose the right plan for you
           </Text>
         </div>
       </FadeInWhenVisible>
       <FadeInWhenVisible delay={0.2}>
-        <p className="mx-auto mt-6 max-w-2xl text-pretty text-center text-lg font-medium text-gray-100 sm:text-xl/8">
+        <p className="mx-auto mt-6 max-w-2xl text-pretty text-center md:text-lg text-sm font-medium text-gray-100 sm:text-xl/8">
           Choose an affordable plan that's packed with the best features for
           engaging your audience, creating customer loyalty, and driving sales.
         </p>

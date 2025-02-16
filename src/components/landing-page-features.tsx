@@ -41,8 +41,8 @@ const FeatureCard = ({
 
 export const LandingPageFeatures: React.FC = () => {
   return (
-    <main className="mt-5">
-      <div className="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
+    <main className="mt-5 w-full">
+      <div className="mx-auto max-w-4xl px-6 md:max-w-7xl w-full lg:px-8 flex flex-col space-y-2">
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -60,7 +60,7 @@ export const LandingPageFeatures: React.FC = () => {
             What we provide for your business.
           </Text>
         </motion.div>
-        <div className="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
+        <div className="mt-12 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
           <FeatureCard className="relative lg:row-span-2">
             <div className="absolute inset-px rounded-lg bg-slate-900 lg:rounded-l-[2rem]"></div>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
@@ -78,7 +78,7 @@ export const LandingPageFeatures: React.FC = () => {
                 <div className="absolute inset-x-10 bottom-0 top-10 overflow-hidden rounded-t-[12cqw] border-x-[3cqw] border-t-[3cqw] border-gray-700 bg-gray-900 shadow-2xl">
                   <img
                     className="size-full object-cover object-top"
-                    src="https://tailwindui.com/plus/img/component-images/bento-03-mobile-friendly.png"
+                    src="https://awesomescreenshot.s3.amazonaws.com/image/4565309/52973278-89e16b581ce40d8f73ffe3ad0025d80c.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJSCJQ2NM3XLFPVKA%2F20250216%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250216T071940Z&X-Amz-Expires=28800&X-Amz-SignedHeaders=host&X-Amz-Signature=4ecb66f2351c1946d68ff09bd1c843d16071299e04bc0469414018960a3d91dc"
                     alt=""
                   />
                 </div>

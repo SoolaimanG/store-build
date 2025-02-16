@@ -5,8 +5,8 @@ import { templateShowCase } from "@/types";
 
 const TemplateCard: FC<templateShowCase> = (template) => {
   return (
-    <div className="md:w-[35rem] w-[30rem] h-fit block p-7 bg-slate-800 rounded-xl">
-      <Avatar className="rounded-md w-full h-[20rem] md:h-[23rem]">
+    <div className="md:w-[35rem] w-[26rem] h-fit block p-7 bg-slate-800 rounded-xl">
+      <Avatar className="rounded-md w-full h-[17rem] md:h-[23rem]">
         <AvatarImage
           src={template.image}
           alt={template.name}

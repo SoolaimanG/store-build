@@ -378,9 +378,9 @@ export const itemVariants = {
 };
 
 export const floatingIcons = [
-  { icon: "👚", className: "md:-left-16 -left-10 -top-10 md:top-0" },
+  { icon: "👚", className: "md:-left-16 -left-5 -top-10 md:top-0" },
   { icon: "💍", className: "-right-4 md:-right-[5rem] -top-[4rem] md:top-6" },
-  { icon: "🏋️", className: "md:-left-8 -left-4 md:-left-[5rem] -bottom-20" },
+  { icon: "🏋️", className: "md:-left-8 -left-1 md:-left-[5rem] -bottom-20" },
   { icon: "💻", className: "right-4 md:-right-[5rem] -bottom-[6rem]" },
 ];
 

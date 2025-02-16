@@ -64,7 +64,7 @@ export const LandingPageHeroSection = () => {
           </Text>
         </div>
         <motion.h1
-          className="text-5xl text-center font-bold"
+          className="md:text-5xl text-3xl text-center font-bold"
           variants={fadeInUp}
         >
           Start An Online Business In Just{" "}
@@ -73,7 +73,7 @@ export const LandingPageHeroSection = () => {
           </SquigglyUnderline>{" "}
         </motion.h1>
         <motion.div variants={fadeInUp}>
-          <Text className="text-gray-200 text-center max-w-5xl m-auto">
+          <Text className="text-gray-200 text-center md:max-w-5xl max-w-4xl m-auto">
             Launch your online store effortlessly with AI-powered guidance—no
             coding needed. Start building a standout ecommerce presence today!
           </Text>
