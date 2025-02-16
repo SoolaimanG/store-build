@@ -8,13 +8,7 @@ import {
   Sparkles,
   Ticket,
 } from "lucide-react";
-import {
-  bentoCardType,
-  IShippingMethods,
-  OrderDetails,
-  PATHS,
-  templateShowCase,
-} from "./types";
+import { bentoCardType, OrderDetails, PATHS, templateShowCase } from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";

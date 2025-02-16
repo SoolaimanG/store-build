@@ -2,7 +2,6 @@ import { Text } from "./text";
 import { tiers } from "@/constants";
 import { FadeInWhenVisible } from "./fade-in-when-visible";
 import PricingCard from "./pricing-card";
-import { cn } from "@/lib/utils";
 
 export default function LandingPagePricing() {
   return (

@@ -14,7 +14,6 @@ import {
   Link,
   Loader2,
   PackageOpen,
-  Pencil,
   Plus,
   RocketIcon,
   Sparkles,

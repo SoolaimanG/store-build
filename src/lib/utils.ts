@@ -12,7 +12,6 @@ import {
   IChatBotIntegration,
   ICheckFor,
   ICoupon,
-  ICustomer,
   ICustomerAddress,
   ICustomerStats,
   IDashboardMetrics,
@@ -33,7 +32,6 @@ import {
   IStoreTheme,
   IUser,
   ShipmentResponse,
-  ShippingData,
 } from "@/types";
 import qs from "query-string";
 import Cookie from "js-cookie";

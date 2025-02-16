@@ -537,7 +537,7 @@ export type ICategory = {
   name: string;
   storeId: string;
   description?: string;
-  productCount: number;
+  productCount?: number;
 };
 
 export type IProduct = {

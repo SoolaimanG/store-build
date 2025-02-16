@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { AddressAutocomplete } from "./address-autocomplete";
 import {} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { useStoreBuildState } from "@/store";
 import { IDeliveryIntegration, IOrder, IShippingMethods } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { cn, errorMessageAndStatus, storeBuilder } from "@/lib/utils";
@@ -29,7 +27,6 @@ interface CreatePickupFormProps {
 }
 
 export function CreatePickupForm({ onSubmit, order }: CreatePickupFormProps) {
-  const { user } = useStoreBuildState();
   const [customerState, setcustomerState] = useState(
     order.customerDetails.shippingAddress.state || ""
   );

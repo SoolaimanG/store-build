@@ -161,7 +161,7 @@ const CollectionManager: FC<{ store?: Partial<IStore> }> = ({ store }) => {
     setEditingCollection(collection);
   };
 
-  const { isLoading, error, data } = useQuery({
+  const { error, data } = useQuery({
     queryKey: ["categories", store?._id],
     queryFn: () => storeBuilder.getCategories(store?._id || user?._id || ""),
   });

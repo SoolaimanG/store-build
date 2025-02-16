@@ -54,7 +54,7 @@ export function ProductFiltersForm({
 }: ProductFiltersFormProps) {
   const { user } = useStoreBuildState();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, error } = useQuery({
     queryKey: ["categories", user?.storeId],
     queryFn: () => storeBuilder.getCategories(user?.storeId || ""),
   });

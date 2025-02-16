@@ -4,7 +4,6 @@ import { Section } from "./section";
 import { Button } from "./ui/button";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { useStoreBuildState } from "@/store";
-import { Text } from "./text";
 import { cn, formatAmountToNaira, isPathMatching } from "@/lib/utils";
 import { PATHS } from "@/types";
 import { AIChat } from "./ai-chat";

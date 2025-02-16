@@ -23,7 +23,6 @@ import {
 } from "@/lib/utils";
 import { IProduct } from "@/types";
 import { Link } from "react-router-dom";
-import { menu } from "@/constants";
 
 const StoreOrderIsPlaced: FC<{
   children?: ReactNode;
