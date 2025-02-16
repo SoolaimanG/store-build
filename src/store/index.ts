@@ -1,4 +1,4 @@
-import { IProduct, IUser, IUseStoreBuildTypes } from "@/types";
+import { IUser, IUseStoreBuildTypes } from "@/types";
 import { create } from "zustand";
 
 export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
