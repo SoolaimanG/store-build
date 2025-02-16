@@ -23,6 +23,10 @@ import PreviewStore from "./pages/preview-store";
 import StoreProvider from "./store/store-provider";
 import StoreProducts from "./store/store-products";
 import StoreProductsDetails from "./store/store-products-details";
+import DashboardCoupon from "./pages/admin/dashboard-coupon";
+import StoreTrackOrder from "./store/store-track-order";
+import OrderTracking from "./components/order-detail";
+import StoreOrderDetail from "./store/store-order-detail";
 
 NProgress.configure({ showSpinner: false });
 
@@ -131,6 +135,14 @@ function App() {
                 }
               />
               <Route
+                path={PATHS.STORE_COUPON}
+                element={
+                  <DashboardProvider>
+                    <DashboardCoupon />
+                  </DashboardProvider>
+                }
+              />
+              <Route
                 path={PATHS.STORE + ":storeCode"}
                 element={
                   <StoreProvider>
@@ -151,6 +163,22 @@ function App() {
                 element={
                   <StoreProvider>
                     <StoreProductsDetails />
+                  </StoreProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE + ":storeCode" + "/track-order/"}
+                element={
+                  <StoreProvider>
+                    <StoreTrackOrder />
+                  </StoreProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE + ":storeCode" + "/track-order/" + ":orderId"}
+                element={
+                  <StoreProvider>
+                    <StoreOrderDetail />
                   </StoreProvider>
                 }
               />

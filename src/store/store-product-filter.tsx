@@ -1,4 +1,6 @@
-import { FC, useState } from "react";
+"use client";
+
+import { type FC, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
   Accordion,
@@ -8,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, formatAmountToNaira, storeBuilder } from "@/lib/utils";
-import { IAvailableColors, IGender } from "@/types";
+import type { IAvailableColors, IGender } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,7 +43,7 @@ const genders: { value: IGender; label: string }[] = [
 
 const ProductFilter: FC<IProductFilter> = ({
   className,
-  buttonColor,
+  buttonColor = "purple",
   colors,
   sizes,
   priceRange: pr,
@@ -49,6 +51,8 @@ const ProductFilter: FC<IProductFilter> = ({
 }) => {
   const n = useNavigate();
   const location = useLocation();
+
+  console.log(colors);
 
   const {
     colors: _colors = [],
@@ -69,7 +73,7 @@ const ProductFilter: FC<IProductFilter> = ({
     sizes?: string[];
   };
   const [__sizes, setSizes] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState(_colors);
+  const [selectedColors, setSelectedColors] = useState<string[]>(_colors);
   const [priceRange, setPriceRange] = useState([_priceRange]);
   const [selectedGender, setSelectedGender] = useState(gender);
   const [c, setC] = useState(category);
@@ -78,7 +82,7 @@ const ProductFilter: FC<IProductFilter> = ({
     if (selectedColors.includes(color)) {
       setSelectedColors(selectedColors.filter((c) => c !== color));
     } else {
-      setSelectedColors([...selectedColors, color]);
+      setSelectedColors((prev) => [...prev, color]);
     }
   };
 
@@ -91,7 +95,8 @@ const ProductFilter: FC<IProductFilter> = ({
 
   const saveFilter = () => {
     const q = queryString.stringify({
-      priceRange,
+      priceRange:
+        priceRange[0] === 0 || priceRange.length === 0 ? undefined : priceRange,
       category: c,
       gender: selectedGender,
       sizes: __sizes,
@@ -125,9 +130,9 @@ const ProductFilter: FC<IProductFilter> = ({
               Category
             </AccordionTrigger>
             <AccordionContent>
-              <div className="flex flex-wrap gap-1">
-                {categories.map((category) => {
-                  return (
+              {categories.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {categories.map((category) => (
                     <Button
                       key={category._id}
                       variant={c === category.slot ? "secondary" : "ghost"}
@@ -144,45 +149,51 @@ const ProductFilter: FC<IProductFilter> = ({
                     >
                       <span>{category.name}</span>
                     </Button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No categories available
+                </p>
+              )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
 
         {/* Size Section */}
-        {!!sizes.length && (
-          <Accordion type="single" collapsible defaultValue="size">
-            <AccordionItem value="size" className="border-b">
-              <AccordionTrigger className="font-medium">Sizes</AccordionTrigger>
-              <AccordionContent>
+        <Accordion type="single" collapsible defaultValue="size">
+          <AccordionItem value="size" className="border-b">
+            <AccordionTrigger className="font-medium">Sizes</AccordionTrigger>
+            <AccordionContent>
+              {sizes.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
-                  {sizes.map((size) => {
-                    return (
-                      <Button
-                        key={size}
-                        variant={__sizes.includes(size) ? "secondary" : "ghost"}
-                        onClick={() => {
-                          if (__sizes.includes(size)) {
-                            setSizes((prev) => prev.filter((g) => g !== size));
-                          } else {
-                            setSizes([...__sizes, size]);
-                          }
-                        }}
-                        className={`flex items-center rounded-full gap-2 ${
-                          __sizes.includes(size) ? "font-medium" : ""
-                        }`}
-                      >
-                        {size}
-                      </Button>
-                    );
-                  })}
+                  {sizes.map((size) => (
+                    <Button
+                      key={size}
+                      variant={__sizes.includes(size) ? "secondary" : "ghost"}
+                      onClick={() => {
+                        if (__sizes.includes(size)) {
+                          setSizes((prev) => prev.filter((g) => g !== size));
+                        } else {
+                          setSizes([...__sizes, size]);
+                        }
+                      }}
+                      className={`flex items-center rounded-full gap-2 ${
+                        __sizes.includes(size) ? "font-medium" : ""
+                      }`}
+                    >
+                      {size}
+                    </Button>
+                  ))}
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No sizes available
+                </p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Color Section */}
         <Accordion type="single" collapsible defaultValue="color">
@@ -190,28 +201,26 @@ const ProductFilter: FC<IProductFilter> = ({
             <AccordionTrigger className="font-medium">Color</AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-wrap gap-1">
-                {colors?.map((color) => {
-                  return (
-                    <Button
-                      key={color.colorCode}
-                      variant={
-                        selectedColors.includes(color.name)
-                          ? "secondary"
-                          : "ghost"
-                      }
-                      onClick={() => handleColorSelect(color.name)}
-                      className={`flex items-center rounded-full gap-2 ${
-                        selectedColors.includes(color.name) ? "font-medium" : ""
-                      }`}
-                    >
-                      <div
-                        style={{ background: color.colorCode }}
-                        className={`w-6 h-6 rounded-full  border-2`}
-                      />
-                      <span>{color.name}</span>
-                    </Button>
-                  );
-                })}
+                {colors?.map((color) => (
+                  <Button
+                    key={color.colorCode}
+                    variant={
+                      selectedColors.includes(color.name)
+                        ? "secondary"
+                        : "ghost"
+                    }
+                    onClick={() => handleColorSelect(color.name)}
+                    className={`flex items-center rounded-full gap-2 ${
+                      selectedColors.includes(color.name) ? "font-medium" : ""
+                    }`}
+                  >
+                    <div
+                      style={{ background: color.colorCode }}
+                      className={`w-6 h-6 rounded-full  border-2`}
+                    />
+                    <span>{color.name}</span>
+                  </Button>
+                ))}
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -278,10 +287,9 @@ const ProductFilter: FC<IProductFilter> = ({
       </div>
 
       <Button
-        variant="ringHover"
         onClick={saveFilter}
         style={{ background: buttonColor }}
-        className="w-full bg-black text-white py-3 rounded-lg mt-4"
+        className="w-full text-white py-3 rounded-lg mt-4"
       >
         Save Filter
       </Button>

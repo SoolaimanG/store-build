@@ -21,6 +21,7 @@ interface ProductQuantityProps {
   quantity: number;
   isLoading?: boolean;
   onDeleteProduct?: () => void;
+  disableQuantityIncrement?: boolean;
 }
 
 const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
@@ -31,6 +32,7 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
   quantity,
   isLoading = false,
   onDeleteProduct,
+  disableQuantityIncrement = false,
 }) => {
   const [isHovered, setIsHovered] = useState(0);
   const { currentStore: store } = useStoreBuildState();
@@ -59,6 +61,7 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
           variant="ghost"
           className=" absolute top-3 right-1 w-8 h-8 p-2"
           onClick={onDeleteProduct}
+          type="button"
         >
           <Trash size={17} />
         </Button>
@@ -99,6 +102,7 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
                   isHovered === 1 ? store?.customizations?.theme.primary : "",
               }}
               size="sm"
+              type="button"
               onClick={() =>
                 onQuantityChange(
                   product._id!,
@@ -106,16 +110,17 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
                   { color, size }
                 )
               }
-              disabled={isLoading}
+              disabled={isLoading || disableQuantityIncrement}
             >
               -
             </Button>
             {isLoading ? (
               <Skeleton className="h-6 w-12" />
             ) : (
-              <span className="w-12 text-center">{quantity}</span>
+              <span className="w-12 text-center">{Math.max(1, quantity)}</span>
             )}
             <Button
+              type="button"
               className="w-7 h-7 flex items-center justify-center"
               variant="ghost"
               onMouseLeave={() => setIsHovered(0)}
@@ -133,7 +138,7 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
                   { color, size }
                 )
               }
-              disabled={isLoading}
+              disabled={isLoading || disableQuantityIncrement}
             >
               +
             </Button>

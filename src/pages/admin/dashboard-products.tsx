@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FilterIcon,
   Package2,
@@ -22,12 +22,12 @@ import { useToastError } from "@/hooks/use-toast-error";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ProductPageLoader from "@/components/loaders/product-page-loader";
 import queryString from "query-string";
-import { ProductFiltersForm } from "@/components/product-filter-form";
 import { ProductStats } from "@/components/product-stats";
 import { Input } from "@/components/ui/input";
 import { ProductTable } from "@/components/product-table";
 import { EmptyProductState } from "@/components/empty";
 import { PaginationFooter } from "@/components/pagination-footer";
+import ProductFilter from "@/store/store-product-filter";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -40,35 +40,56 @@ export default function ProductsPage() {
   const { user } = useStoreBuildState();
   const [showFilters, setShowFilters] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const priceRange = { min: 0, max: 1000 };
   const location = useLocation();
   const navigate = useNavigate();
 
   const queryParams = queryString.parse(location.search);
 
-  const { data, error, isLoading } = useQuery({
-    queryKey: ["products", user?.storeId, location.search],
+  const {
+    colors = [],
+    category,
+    priceRange: _priceRange,
+    rating,
+    page = 1,
+    sizes = [],
+  } = queryString.parse(location.search, {
+    parseBooleans: true,
+    parseNumbers: true,
+  }) as {
+    colors: string[];
+    category: string;
+    priceRange: number;
+    rating: number;
+    page?: number;
+    sizes?: string[];
+  };
+
+  const { isLoading, data, error } = useQuery({
+    queryKey: [
+      "products",
+      user?.storeId!,
+      colors,
+      category,
+      rating,
+      _priceRange,
+    ],
     queryFn: () =>
-      storeBuilder.getProducts(user?.storeId || "", {
-        q: queryParams.q as string | undefined,
-        sort: queryParams.sort as "default",
-        category: queryParams.category as string,
-        minPrice: queryParams.minPrice
-          ? parseFloat(queryParams.minPrice as string)
-          : undefined,
-        maxPrice: queryParams.maxPrice
-          ? parseFloat(queryParams.maxPrice as string)
-          : undefined,
-        size: queryParams.size
-          ? parseInt(queryParams.size as string, 10)
-          : undefined,
+      storeBuilder.getProducts(user?._id!, {
+        category,
+        colors: Array.isArray(colors) ? colors : [colors],
+        rating,
+        sizes,
+        sort: "default",
+        maxPrice: _priceRange,
+        size: 20 * Number(page),
       }),
-    enabled: Boolean(user?.storeId),
   });
 
   useToastError(error);
 
   const products = data?.data?.products || [];
+
+  const { data: productData } = data || {};
 
   if (isLoading) return <ProductPageLoader />;
 
@@ -82,56 +103,27 @@ export default function ProductsPage() {
     navigate(`${location.pathname}?${newSearch}`);
   };
 
-  const max =
-    data?.data?.products?.reduce((max, product) => {
-      return product.price.default > max ? product.price.default : max;
-    }, Number.NEGATIVE_INFINITY) || 20000;
-
   const Filters = () => (
-    <motion.div
-      className="flex flex-col gap-4"
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={fadeInUp}
-    >
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Filters</h3>
+    <motion.div className="flex flex-col gap-4">
+      <div className="flex items-center justify-end">
         {!isDesktop && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setShowFilters(false)}
+            className="rounded-full"
           >
             <XIcon className="h-4 w-4" />
           </Button>
         )}
       </div>
-      <ProductFiltersForm
-        onSubmit={(values) => {
-          updateQueryParams(values);
-          setShowFilters(false);
-        }}
-        initialValues={{
-          q: (queryParams.q as string) || "",
-          sort: queryParams.sort as
-            | "default"
-            | "stock-level"
-            | "low-to-high"
-            | "high-to-low"
-            | undefined,
-          category: (queryParams.category as string) || "all",
-          minPrice: queryParams.minPrice
-            ? parseFloat(queryParams.minPrice as string)
-            : undefined,
-          maxPrice: queryParams.maxPrice
-            ? parseFloat(queryParams.maxPrice as string)
-            : undefined,
-          size: queryParams.size
-            ? parseInt(queryParams.size as string, 10)
-            : undefined,
-        }}
-        priceRange={{ ...priceRange, max }}
+      <ProductFilter
+        priceRange={productData?.filters.priceRange}
+        sizes={productData?.filters.allSizes || []}
+        colors={productData?.filters.allColors!}
+        className="md:h-[450px] h-[500px]"
+        buttonColor={""}
+        storeId={user?.storeId!}
       />
     </motion.div>
   );
@@ -140,9 +132,9 @@ export default function ProductsPage() {
     if (isDesktop) {
       return (
         <Dialog open={showFilters} onOpenChange={setShowFilters}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogTitle className=" sr-only">Product Filters</DialogTitle>
-            <AnimatePresence>{showFilters && <Filters />}</AnimatePresence>
+            <Filters />
           </DialogContent>
         </Dialog>
       );
@@ -153,7 +145,7 @@ export default function ProductsPage() {
         <DrawerContent className="py-3">
           <DrawerTitle className="sr-only">Product Filters</DrawerTitle>
           <div className="p-4">
-            <AnimatePresence>{showFilters && <Filters />}</AnimatePresence>
+            <Filters />
           </div>
         </DrawerContent>
       </Drawer>
@@ -183,24 +175,20 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(true)}
-            >
-              <FilterIcon className="mr-2 h-4 w-4" />
-              Filters
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(true)}
+          >
+            <FilterIcon className="mr-2 h-4 w-4" />
+            Filters
+          </Button>
+          <Link to={PATHS.STORE_PRODUCTS + generateRandomString(8) + "#new"}>
+            <Button variant="ringHover" size="sm">
+              <Package2Icon className="mr-2 h-4 w-4" />
+              Add Product
             </Button>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link to={PATHS.STORE_PRODUCTS + generateRandomString(8) + "#new"}>
-              <Button size="sm">
-                <Package2Icon className="mr-2 h-4 w-4" />
-                Add Product
-              </Button>
-            </Link>
-          </motion.div>
+          </Link>
         </div>
       </motion.div>
 

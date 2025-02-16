@@ -212,8 +212,8 @@ const ProductManagement = () => {
     data: regionsData,
     error: regionsError,
   } = useQuery({
-    queryKey: ["integration", "kwik"],
-    queryFn: () => storeBuilder.getIntegration("kwik"),
+    queryKey: ["integration", "sendbox"],
+    queryFn: () => storeBuilder.getIntegration("sendbox"),
   });
 
   const { data: integration } = regionsData || {};
@@ -1205,8 +1205,8 @@ const ProductManagement = () => {
                     connected: integration?.integration.isConnected,
                     description: "",
                     icon: "",
-                    id: "kwik",
-                    name: "Kwik",
+                    id: "sendbox",
+                    name: "sendbox",
                   }}
                 >
                   <Button disabled={form.watch("isDigital")} className="w-full">

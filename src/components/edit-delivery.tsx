@@ -20,10 +20,13 @@ export function EditDelivery({
   orderData: IOrder;
   onClose: () => void;
 }) {
-  const [carrier, setCarrier] = useState("KWIK");
-  const [trackingNo, setTrackingNo] = useState("TK-793902");
-
-  console.log(order.shippingDetails);
+  const [deliveryType, setDeliveryType] = useState(
+    order.shippingDetails.shippingMethod
+  );
+  const [carrier, setCarrier] = useState("SENDBOX");
+  const [trackingNo, setTrackingNo] = useState(
+    order.paymentDetails.tx_ref || ""
+  );
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -42,7 +45,7 @@ export function EditDelivery({
           <Input
             id="carrier"
             readOnly
-            value={"KWIK"}
+            value={"SENDBOX"}
             onChange={(e) => setCarrier(e.target.value)}
             className="col-span-3"
           />
@@ -51,14 +54,18 @@ export function EditDelivery({
           <Label htmlFor="speed" className="text-left">
             Delivery Type
           </Label>
-          <Select defaultValue="standard">
+          <Select
+            value={deliveryType}
+            onValueChange={(e: "REGULAR" | "EXPRESS") => setDeliveryType(e)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a delivery type" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Delivery Type</SelectLabel>
-                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="STANDARD">Standard</SelectItem>
+                <SelectItem value="EXPRESS">Express</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

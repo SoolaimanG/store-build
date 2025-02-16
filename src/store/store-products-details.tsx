@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Img } from "react-image";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   cn,
   formatAmountToNaira,
@@ -36,6 +36,8 @@ import { toast } from "@/hooks/use-toast";
 import { EmptyProductState } from "@/components/empty";
 import WriteReviewOnProduct from "./write-review-on-product";
 import { ReviewCard } from "./review-card";
+import queryString from "query-string";
+import { useToastError } from "@/hooks/use-toast-error";
 
 function ProductSkeleton() {
   return (
@@ -216,11 +218,21 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
 
   const { data: reviews = [] } = data || {};
 
-  console.log({ isLoading, data, error });
+  const location = useLocation();
+  const { tab } = queryString.parse(location.search) as { tab?: string };
+
+  useToastError(error);
+
+  if (isLoading) return null;
 
   return (
-    <Tabs defaultValue="descriptions" className="w-full mt-8">
-      <TabsList className="grid w-full h-12 grid-cols-3 mb-8">
+    <Tabs defaultValue={tab || "descriptions"} className="w-full mt-8">
+      <TabsList
+        className={cn(
+          "grid w-full h-12 grid-cols-3 mb-8",
+          !store?.customizations?.productPage.showReviews && "grid-cols-2"
+        )}
+      >
         <TabsTrigger value="descriptions" className="text-sm md:text-base">
           Description
         </TabsTrigger>
@@ -232,9 +244,11 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
             Delivery Locations
           </TabsTrigger>
         )}
-        <TabsTrigger value="reviews" className="text-sm md:text-base">
-          Reviews
-        </TabsTrigger>
+        {store?.customizations?.productPage.showReviews && (
+          <TabsTrigger value="reviews" className="text-sm md:text-base">
+            Reviews
+          </TabsTrigger>
+        )}
       </TabsList>
       <TabsContent value="descriptions">
         <Card>
@@ -283,61 +297,67 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
           </Card>
         </TabsContent>
       )}
-      <TabsContent value="reviews">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold">Customer Reviews</h3>
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.averageRating || 1)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "fill-gray-200 text-gray-200"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="font-semibold">{4}</span>
-                <span className="text-muted-foreground">
-                  ({product.totalReviews || 0} reviews)
-                </span>
-                <WriteReviewOnProduct product={product}>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Edit3 size={17} />
-                  </Button>
-                </WriteReviewOnProduct>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {!!reviews.length ? (
-                reviews.map((review) => (
-                  <ReviewCard key={review._id} {...review} />
-                ))
-              ) : (
-                <EmptyProductState
-                  header="No Reviews Yikes"
-                  icon={MessageSquare}
-                  message="No Review On This Product Yet! You can write your review by clicking the button below"
-                >
+      {store?.customizations?.productPage.showReviews && (
+        <TabsContent value="reviews">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Customer Reviews</h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < Math.floor(product.averageRating || 1)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "fill-gray-200 text-gray-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="font-semibold">{4}</span>
+                  <span className="text-muted-foreground">
+                    ({product.totalReviews || 0} reviews)
+                  </span>
                   <WriteReviewOnProduct product={product}>
                     <Button
-                      style={{
-                        background: store?.customizations?.theme.primary,
-                      }}
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
                     >
-                      Write Review
+                      <Edit3 size={17} />
                     </Button>
                   </WriteReviewOnProduct>
-                </EmptyProductState>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {!!reviews.length ? (
+                  reviews.map((review) => (
+                    <ReviewCard key={review._id} {...review} />
+                  ))
+                ) : (
+                  <EmptyProductState
+                    header="No Reviews Yikes"
+                    icon={MessageSquare}
+                    message="No Review On This Product Yet! You can write your review by clicking the button below"
+                  >
+                    <WriteReviewOnProduct product={product}>
+                      <Button
+                        style={{
+                          background: store?.customizations?.theme.primary,
+                        }}
+                      >
+                        Write Review
+                      </Button>
+                    </WriteReviewOnProduct>
+                  </EmptyProductState>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      )}
     </Tabs>
   );
 };

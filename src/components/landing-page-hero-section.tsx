@@ -8,12 +8,12 @@ import { Input } from "./ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import Marquee from "./ui/marquee";
 import { templateShowCaseList } from "@/constants";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useState } from "react";
 import { appConfig } from "@/lib/utils";
 import { useAuthentication } from "@/hooks/use-authentication";
 import { PATHS } from "@/types";
 import queryString from "query-string";
+import TemplateCard from "./template-card";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -82,7 +82,7 @@ export const LandingPageHeroSection = () => {
           className="flex w-full items-center justify-center lg:mx-0"
           variants={fadeInUp}
         >
-          <div className="relative p-1 w-[70%]">
+          <div className="relative p-1 w-[85%] md:w-[45%]">
             <Input
               value={prompt!}
               onChange={(e) => setPrompt(e.target.value)}
@@ -125,26 +125,8 @@ export const LandingPageHeroSection = () => {
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Link
-                    to={"#"}
-                    className="w-[35rem] h-fit block p-7 bg-slate-800 rounded-xl"
-                  >
-                    <Avatar className="rounded-md w-full h-[23rem]">
-                      <AvatarImage
-                        src={template.image}
-                        alt={template.name}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="rounded-md">
-                        {template.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="mt-2">
-                      <h3 className="text-xl font-semibold">{template.name}</h3>
-                      <Text className="line-clamp-1 text-gray-400">
-                        {template.descriptions}
-                      </Text>
-                    </div>
+                  <Link to={"#"}>
+                    <TemplateCard {...template} />
                   </Link>
                 </motion.div>
               ))}

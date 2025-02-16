@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { Text } from "@/components/text";
 import StoreAboutUs from "./store-about-us";
 import StoreFooter from "./footer";
+import StoreOrderIsPlaced from "./store-order-is-placed";
 
 const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { storeCode = "" } = useParams();
@@ -44,6 +45,7 @@ const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <div>
       <StoreAboutUs isOpen={location.hash === "#about-us"} />
+      <StoreOrderIsPlaced />
       <HeroSectionNavBar />
       {children}
       {data?.data.customizations?.footer && <StoreFooter />}

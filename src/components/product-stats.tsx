@@ -40,7 +40,8 @@ export function ProductStats({
         <CardContent>
           <div className="text-2xl font-bold">{digitalProducts}</div>
           <p className="text-xs text-muted-foreground">
-            {((digitalProducts / totalProducts) * 100).toFixed(0)}% of total
+            {((digitalProducts / totalProducts) * 100 || 0).toFixed(0)}% of
+            total
           </p>
         </CardContent>
       </Card>

@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  DollarSign,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
 import {
   addQueryParameter,
   cn,
@@ -11,14 +17,7 @@ import {
   storeBuilder,
 } from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -28,7 +27,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -46,6 +44,9 @@ import { useToastError } from "@/hooks/use-toast-error";
 import { IDashboardMetrics, PATHS } from "@/types";
 import MetricLoading from "@/components/loaders/metric-loading";
 import RecentOrdersLoading from "@/components/loaders/recent-orders-loading";
+import { format } from "date-fns";
+import { EmptyProductState } from "@/components/empty";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const timeRanges = [
   { value: "all", label: "All-time" },
@@ -53,28 +54,12 @@ const timeRanges = [
   { value: "30d", label: "Last 30 days" },
 ];
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
-
 const chartConfig = {
   desktop: {
-    label: "Desktop",
+    label: "Sales",
     color: "hsl(var(--chart-1))",
   },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))",
-  },
-  label: {
-    color: "hsl(var(--background))",
-  },
-} satisfies ChartConfig;
+};
 
 export default function Dashboard() {
   const location = useLocation();
@@ -242,7 +227,7 @@ const MetricsCard: FC<IDashboardMetrics> = (metric) => {
 export function RecentSales({ className }: { className?: string }) {
   const { isLoading, data, error } = useQuery({
     queryKey: ["recent-sales"],
-    queryFn: () => storeBuilder.getOrders("Paid", 0, 5, true),
+    queryFn: () => storeBuilder.getOrders("Paid", 0, 5, true, "Completed"),
   });
 
   const { data: recentSales } = data || {};
@@ -250,77 +235,100 @@ export function RecentSales({ className }: { className?: string }) {
   useToastError(error);
 
   return (
-    <Card className={cn("w-full text-white py-2", className)}>
+    <Card className={cn("w-full p-0", className)}>
       <CardHeader>
-        <CardTitle>Recent Sales</CardTitle>
-        <CardDescription>Below are your most recent sales.</CardDescription>
+        <CardTitle className="text-2xl font-bold">Recent Sales</CardTitle>
+        <CardDescription>
+          An overview of your most recent transactions.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-2">
         {isLoading ? (
           <RecentOrdersLoading />
         ) : !!recentSales?.orders.length ? (
-          recentSales?.orders?.map((order, index) => (
-            <motion.div
-              key={index}
-              className="flex items-center justify-between"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div className="flex items-center space-x-4">
-                <Avatar>
-                  <AvatarImage
-                    src="/placeholder.svg?height=40&width=40"
-                    alt={order.customerDetails.name}
-                  />
-                  <AvatarFallback>
-                    {getInitials(order.customerDetails.name || "")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{order.customerDetails.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {order.customerDetails.email}
-                  </p>
-                </div>
-              </div>
-              <p className="font-medium text-yellow-700">
-                {order.amountPaid || "Waiting for payment.."}
-              </p>
-            </motion.div>
-          ))
+          <ScrollArea className="h-[330px]">
+            <AnimatePresence>
+              {recentSales.orders.map((order, index) => (
+                <motion.div
+                  key={order._id}
+                  className="flex items-center cursor-pointer justify-between p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors duration-200"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        // src={`https://api.dicebear.com/6.x/initials/svg?seed=${order.customerDetails.name}`}
+                        alt={order.customerDetails.name}
+                      />
+                      <AvatarFallback>
+                        {getInitials(order.customerDetails.name || "")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">
+                        {order.customerDetails.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.customerDetails.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="font-medium text-green-600">
+                        {formatAmountToNaira(order.amountPaid || 0)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(
+                          new Date(order.createdAt || ""),
+                          "MMM dd, yyyy"
+                        )}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </ScrollArea>
         ) : (
-          <div className="flex h-[20rem] flex-col items-center justify-center p-8 text-center">
-            <svg
-              className="w-12 h-12 text-gray-400 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <h3 className="text-lg font-medium mb-2">No recent sales</h3>
-            <p className="text-sm text-muted-foreground">
-              When you sell an item, they will appear here.
-            </p>
+          <div className="h-[290px]">
+            <EmptyProductState
+              icon={DollarSign}
+              header="No Recent Sale"
+              message="Your recent sales will appear here once you start making transactions"
+            />
           </div>
         )}
-        <CardFooter className="p-0 w-full">
-          <Button asChild variant="ringHover" size="lg" className="w-full mt-3">
-            <Link to={PATHS.STORE_ORDERS}> See All Orders</Link>
-          </Button>
-        </CardFooter>
       </CardContent>
+      <CardFooter className="bg-gray-50 dark:bg-slate-900 rounded-b-lg">
+        <Button asChild variant="outline" size="lg" className="w-full mt-5">
+          <Link
+            to={PATHS.STORE_ORDERS}
+            className="flex items-center justify-center"
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            View All Orders
+          </Link>
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
 
 export function Chart({ className }: { className?: string }) {
+  const { data, error } = useQuery({
+    queryKey: ["sales-chart"],
+    queryFn: () => storeBuilder.getSalesChartData(),
+  });
+
+  const { data: chartData = [] } = data || {};
+
+  useToastError(error);
+
   return (
     <Card
       className={cn(
@@ -328,10 +336,10 @@ export function Chart({ className }: { className?: string }) {
         className
       )}
     >
-      <CardHeader>
+      <CardHeader className="px-0 pt-0">
         <CardTitle>Yearly Sales</CardTitle>
         <CardDescription>
-          January - June {new Date().getFullYear()}
+          January - December {new Date().getFullYear()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -341,10 +349,10 @@ export function Chart({ className }: { className?: string }) {
             data={chartData}
             layout="vertical"
             margin={{
-              right: 16,
+              left: -20,
             }}
           >
-            <CartesianGrid horizontal={false} />
+            <XAxis type="number" hide />
             <YAxis
               dataKey="month"
               type="category"
@@ -352,43 +360,23 @@ export function Chart({ className }: { className?: string }) {
               tickMargin={10}
               axisLine={false}
               tickFormatter={(value) => value.slice(0, 3)}
-              hide
             />
-            <XAxis dataKey="desktop" type="number" hide />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent indicator="line" />}
+              content={<ChartTooltipContent hideLabel />}
             />
             <Bar
-              dataKey="desktop"
-              layout="vertical"
-              fill="var(--color-desktop)"
-              radius={4}
-              className="cursor-pointer"
-            >
-              <LabelList
-                dataKey="month"
-                position="insideLeft"
-                offset={8}
-                fontSize={14}
-              />
-              <LabelList
-                dataKey="desktop"
-                position="right"
-                offset={8}
-                className="fill-foreground"
-                fontSize={12}
-              />
-            </Bar>
+              dataKey="sale"
+              fill="var(--color-sale)"
+              radius={[0, 5, 5, 0]}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing sales for the last 6 months
+          Showing total sales for the last 12 months{" "}
+          <TrendingUp className="h-4 w-4" />
         </div>
       </CardFooter>
     </Card>
@@ -398,7 +386,7 @@ export function Chart({ className }: { className?: string }) {
 function RecentOrder({ className }: { className?: string }) {
   const { isLoading, data, error } = useQuery({
     queryKey: ["orders"],
-    queryFn: () => storeBuilder.getOrders(undefined, 0, 5, true),
+    queryFn: () => storeBuilder.getOrders(undefined, 0, 5, false),
   });
 
   const { data: recentOrders } = data || {};
@@ -406,9 +394,11 @@ function RecentOrder({ className }: { className?: string }) {
   useToastError(error);
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <h3 className="text-lg font-medium">Recent orders</h3>
-      <div className="space-y-4">
+    <Card className={cn("space-y-4", className)}>
+      <CardHeader>
+        <CardTitle>My Recent Orders</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
         {isLoading ? (
           // Skeleton loading
           <RecentOrdersLoading />
@@ -466,28 +456,24 @@ function RecentOrder({ className }: { className?: string }) {
           ))
         ) : (
           // Empty state
-          <div className="flex h-[23rem] flex-col items-center justify-center p-8 text-center border rounded-lg">
-            <svg
-              className="w-12 h-12 text-gray-400 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <h3 className="text-lg font-medium mb-2">No recent orders</h3>
-            <p className="text-sm text-muted-foreground">
-              When you receive new orders, they will appear here.
-            </p>
-          </div>
+          <EmptyProductState
+            icon={DollarSign}
+            header="No recent orders"
+            message="When you receive new orders, they will appear here."
+          >
+            <Button asChild variant="ringHover" size="sm">
+              <Link
+                to={
+                  PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"
+                }
+              >
+                Create order
+              </Link>
+            </Button>
+          </EmptyProductState>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

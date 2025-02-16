@@ -33,8 +33,9 @@ export default function LandingPageFooter() {
             />
             <NewsLetterButton email={email} className="w-fit">
               <Button
+                variant="ringHover"
                 type="button"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 h-9"
               >
                 Subscribe
               </Button>

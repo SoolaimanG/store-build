@@ -1,3 +1,5 @@
+"use client";
+
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "./ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -5,42 +7,56 @@ import { Card, CardContent, CardHeader } from "./ui/card";
 import { useAuthentication } from "@/hooks/use-authentication";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Text } from "./text";
-import { appConfig, formatAmountToNaira } from "@/lib/utils";
-import { buttonVariants, tiers } from "@/constants";
+import {
+  appConfig,
+  errorMessageAndStatus,
+  formatAmountToNaira,
+  storeBuilder,
+} from "@/lib/utils";
+import { tiers } from "@/constants";
 import { Badge } from "./ui/badge";
-import { motion } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
+  CreditCard,
+} from "lucide-react";
 import { Button } from "./ui/button";
-import CompletePaymentBtn from "./complete-payment-btn";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import queryString from "query-string";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { Separator } from "./ui/separator";
+import { Progress } from "./ui/progress";
 
 const SubscribeWindow = () => {
+  const [isPending, startTransition] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { user } = useAuthentication();
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [months, setMonths] = useState(1);
   const location = useLocation();
   const n = useNavigate();
 
   const qs = queryString.parse(location.hash) as Record<string, any>;
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } =
         scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 0);
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth);
     }
-  };
+  }, []);
 
   const handleClose = () => {
-    n(location.pathname + `?${location.search}`);
+    n(location.pathname + `${location.search}`);
   };
 
   useEffect(() => {
@@ -50,7 +66,7 @@ const SubscribeWindow = () => {
       handleScroll(); // Initial check
       return () => scrollContainer.removeEventListener("scroll", handleScroll);
     }
-  }, []);
+  }, [handleScroll]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -62,8 +78,39 @@ const SubscribeWindow = () => {
     }
   };
 
+  const incrementMonths = useCallback(() => {
+    setMonths((prev) => Math.min(prev + 1, 12)); // Max 12 months
+  }, []);
+
+  const decrementMonths = useCallback(() => {
+    setMonths((prev) => Math.max(prev - 1, 1)); // Min 1 month
+  }, []);
+
+  const handleInitializeSubscription = async () => {
+    try {
+      startTransition(true);
+      const res = await storeBuilder.initializeChargeForSubscription(
+        reminderEnabled,
+        months
+      );
+      toast({ title: "SUCCESS", description: res.message });
+
+      window.open(res.data.data.authorization_url, "_blank");
+    } catch (error) {
+      const { status: title, message: description } =
+        errorMessageAndStatus(error);
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      startTransition(false);
+    }
+  };
+
   const premiumFeatures = (
-    <div className="relative">
+    <div className="relative mt-4">
       {showLeftArrow && (
         <Button
           variant="ghost"
@@ -80,29 +127,20 @@ const SubscribeWindow = () => {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {tiers[1].features.map((feature, index) => (
-          <motion.div
+          <Badge
             key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            variant="secondary"
+            className="rounded-full whitespace-nowrap gap-2 cursor-pointer py-2 px-3"
           >
-            <Badge
-              variant="secondary"
-              className="rounded-sm whitespace-nowrap gap-2 cursor-pointer"
-            >
-              <CheckCircle2
-                size={17}
-                className="text-purple-500 fill-purple-500"
-              />
-              {feature}
-            </Badge>
-          </motion.div>
+            <CheckCircle2 size={17} className="text-green-500" />
+            {feature}
+          </Badge>
         ))}
       </div>
       {showRightArrow && (
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10"
           onClick={() => scroll("right")}
         >
@@ -112,20 +150,16 @@ const SubscribeWindow = () => {
     </div>
   );
 
+  const totalPrice = appConfig.premiumAmount * months;
   const nextPaymentDate = new Date();
-  nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+  nextPaymentDate.setMonth(nextPaymentDate.getMonth() + months);
 
   const paymentDetails = (
-    <div className="p-2 md:p-0 space-y-4 w-full max-h-[calc(100vh-200px)] overflow-y-auto">
-      <Card className="p-3 rounded-md w-full">
+    <div className="p-2 md:p-0 space-y-6 w-full max-h-[calc(100vh-200px)] overflow-y-auto">
+      <Card className="p-6 rounded-lg w-full shadow-md">
         <CardContent className="p-0 w-full">
-          <CardHeader className="p-0 py-2 space-y-3">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-row items-center justify-between w-full"
-            >
+          <CardHeader className="p-0 space-y-4">
+            <div className="flex flex-row items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage src="" />
@@ -134,38 +168,70 @@ const SubscribeWindow = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3>Account</h3>
-                  <Text>{user?.email}</Text>
+                  <h3 className="font-semibold">Account</h3>
+                  <Text className="text-sm text-gray-500">{user?.email}</Text>
                 </div>
               </div>
               <div>
-                <h2 className="font-bold">{new Date().toLocaleDateString()}</h2>
+                <Text className="text-sm font-medium">
+                  {new Date().toLocaleDateString()}
+                </Text>
               </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <Text className="text-4xl font-bold">
-                {formatAmountToNaira(appConfig.premiumAmount)}
+            </div>
+            <Separator />
+            <div>
+              <Text className="text-5xl font-bold">
+                {formatAmountToNaira(totalPrice)}
               </Text>
-            </motion.div>
+              <Text className="text-sm text-gray-500">
+                Total for {months} {months === 1 ? "month" : "months"}
+              </Text>
+            </div>
+            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-md">
+              <Text className="font-medium">Subscription period:</Text>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={decrementMonths}
+                  disabled={months === 1}
+                  className="w-8 h-8 rounded-full"
+                >
+                  -
+                </Button>
+                <Text className="w-8 text-center font-bold">{months}</Text>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={incrementMonths}
+                  disabled={months === 12}
+                  className="w-8 h-8 rounded-full"
+                >
+                  +
+                </Button>
+                <Text className="font-medium">
+                  {months === 1 ? "MONTH" : "MONTHS"}
+                </Text>
+              </div>
+            </div>
             {premiumFeatures}
           </CardHeader>
         </CardContent>
       </Card>
-      <Card className="p-4 space-y-4">
+      <Card className="p-6 space-y-4 shadow-md rounded-lg">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Subscription Details</h3>
-          <Text>
+          <h3 className="text-xl font-semibold mb-2">Subscription Details</h3>
+          <Text className="text-gray-400 tracking-tight">
             Unlock premium features and enhance your experience with our
             subscription plan.
           </Text>
         </div>
+        <Separator />
         <div>
           <h4 className="font-medium mb-1">Next Payment Date</h4>
-          <Text>{nextPaymentDate.toLocaleDateString()}</Text>
+          <Text className="text-primary">
+            {nextPaymentDate.toLocaleDateString()}
+          </Text>
         </div>
         <div className="flex items-center space-x-2">
           <Switch
@@ -173,30 +239,31 @@ const SubscribeWindow = () => {
             checked={reminderEnabled}
             onCheckedChange={setReminderEnabled}
           />
-          <Label htmlFor="reminder" className="flex items-center gap-2">
-            <Bell size={16} />
+          <Label
+            htmlFor="reminder"
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Bell size={16} className="text-primary" />
             Remind me before subscription ends
           </Label>
         </div>
       </Card>
-      <CompletePaymentBtn
-        amount={appConfig.premiumAmount}
-        customer={{
-          email: user?.email!,
-          name: user?.storeName!,
-          phone_number: "",
-        }}
+
+      <Progress value={(months / 12) * 100} className="w-full" />
+
+      <Button
+        variant="ringHover"
+        size="lg"
+        onClick={handleInitializeSubscription}
+        className="w-full font-semibold"
+        disabled={isPending}
       >
-        <motion.div
-          variants={buttonVariants(1.008, 0.99)}
-          whileHover="hover"
-          whileTap="tap"
-        >
-          <Button variant="ringHover" className="h-[3rem] w-full">
-            Complete Payment
-          </Button>
-        </motion.div>
-      </CompletePaymentBtn>
+        <CreditCard className="mr-2 h-5 w-5" /> Upgrade Now
+      </Button>
+
+      <Text className="text-center text-sm text-gray-500">
+        {months} out of 12 months selected
+      </Text>
     </div>
   );
 
@@ -211,8 +278,10 @@ const SubscribeWindow = () => {
         }}
       >
         <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle className="text-3xl">Payment Details</DrawerTitle>
+          <DrawerHeader className="text-center">
+            <DrawerTitle className="text-2xl font-bold tracking-tight">
+              Upgrade to Premium
+            </DrawerTitle>
           </DrawerHeader>
           {paymentDetails}
         </DrawerContent>
@@ -231,7 +300,9 @@ const SubscribeWindow = () => {
     >
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Payment Details</DialogTitle>
+          <DialogTitle className="text-3xl font-bold tracking-tight text-center">
+            Upgrade to Premium
+          </DialogTitle>
         </DialogHeader>
         {paymentDetails}
       </DialogContent>

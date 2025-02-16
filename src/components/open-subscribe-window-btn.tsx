@@ -15,14 +15,12 @@ const OpenSubscribeWindowBtn: FC<{
   const onClick = () => {
     const currentPath = location.href;
 
-    console.log({ currentPath });
-
     if (!isAuthenticated) {
       n(`${PATHS.SIGNIN}?callbackUrl=${currentPath}`);
       return;
     }
 
-    n(`#subscribe`);
+    n(`${location.search}#subscribe`);
   };
 
   return (

@@ -6,8 +6,15 @@ import {
   LayoutGrid,
   LayoutPanelTop,
   Sparkles,
+  Ticket,
 } from "lucide-react";
-import { bentoCardType, PATHS, templateShowCase } from "./types";
+import {
+  bentoCardType,
+  IShippingMethods,
+  OrderDetails,
+  PATHS,
+  templateShowCase,
+} from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";
@@ -155,6 +162,11 @@ export const sidebarItems = [
     icon: LayoutGrid,
     label: "Integrations",
     path: PATHS.STORE_INTEGRATIONS,
+  },
+  {
+    icon: Ticket,
+    label: "Coupon",
+    path: PATHS.STORE_COUPON,
   },
   {
     icon: Settings,
@@ -372,10 +384,10 @@ export const itemVariants = {
 };
 
 export const floatingIcons = [
-  { icon: "👚", className: "-left-16 top-0" },
-  { icon: "💍", className: "-right-8 md:-right-[5rem] top-6" },
-  { icon: "🏋️", className: "-left-8 md:-left-[5rem] -bottom-14" },
-  { icon: "💻", className: "right-4 md:-right-[5rem] -bottom-[5.5rem]" },
+  { icon: "👚", className: "md:-left-16 -left-10 -top-10 md:top-0" },
+  { icon: "💍", className: "-right-4 md:-right-[5rem] -top-[4rem] md:top-6" },
+  { icon: "🏋️", className: "md:-left-8 -left-4 md:-left-[5rem] -bottom-20" },
+  { icon: "💻", className: "right-4 md:-right-[5rem] -bottom-[6rem]" },
 ];
 
 export const iconList = [
@@ -565,7 +577,7 @@ export const orderSchema = z.object({
   paymentMethod: z.string().min(1, "Payment method is required").optional(),
   amountPaid: z.number().optional(),
   totalAmount: z.number().optional(),
-  shippingMethod: z.string().min(1, "Shipping method is required"),
+  shippingMethod: z.enum(["EXPRESS", "REGULAR"]),
   shippingCost: z.number().optional(),
   estimatedDeliveryDate: z
     .date({
@@ -574,6 +586,7 @@ export const orderSchema = z.object({
     .optional(),
   note: z.string().optional(),
   products: z.array(z.any()),
+  deliveryType: z.enum(["pick_up", "sendbox", "waybill"]),
 });
 
 // Animation Variant
@@ -595,7 +608,7 @@ export const orderForm = (states?: string[], orderStatus = ["Pending"]) => [
   {
     title: "Order Details",
     fields: [
-      { name: "storeId", label: "Store ID", type: "text", readOnly: true },
+      { name: "storeId", label: "Order Id", type: "text", readOnly: true },
       {
         name: "orderStatus",
         label: "Order Status",
@@ -685,7 +698,7 @@ export const orderForm = (states?: string[], orderStatus = ["Pending"]) => [
         name: "shippingMethod",
         label: "Shipping Method",
         type: "select",
-        options: ["Standard", "Express", "Overnight"],
+        options: ["Standard", "Express"],
       },
       {
         name: "shippingCost",
@@ -697,6 +710,12 @@ export const orderForm = (states?: string[], orderStatus = ["Pending"]) => [
         name: "estimatedDeliveryDate",
         label: "Estimated Delivery Date",
         type: "date",
+      },
+      {
+        name: "deliveryType",
+        label: "Delivery Type",
+        type: "select",
+        options: ["pick_up", "waybill", "sendbox"],
       },
     ],
     className: "lg:col-span-1 row-span-1",
@@ -730,4 +749,97 @@ export const popIn: Variants = {
     opacity: 1,
     transition: { type: "spring", stiffness: 300, damping: 25 },
   },
+};
+
+export const sampleOrder: OrderDetails = {
+  id: "5913",
+  item: {
+    name: "Apple Watch Series 8 GPS",
+    image:
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/original-f1ef06c1225c6f6d92182859d8b01f8e-8EBwqEidfGLqBEkn0dhByTmheWLkXs.webp",
+  },
+  courier: {
+    name: "R. Gosling",
+    company: "UPS",
+    isManualShipping: false,
+  },
+  startTime: "14 Jan 2023, 15:43:23",
+  address: "4517 Washington Ave. Manchester, Kentucky",
+  status: "in_progress",
+  tracking: {
+    number: "3409-4934-4253",
+    warehouse: "Apple Spot 13b",
+    estimatedDelivery: "15/09/2023",
+  },
+  timeline: [
+    {
+      id: "1",
+      title: "Product Shipped",
+      time: "13/09/2023 5:23 pm",
+      details: [
+        "Courier Service: UPS, R. Gosling",
+        "Estimated Delivery Date: 15/09/2023",
+      ],
+      status: "completed",
+    },
+    {
+      id: "2",
+      title: "Product Packaging",
+      time: "13/09/2023 4:13 pm",
+      details: ["Tracking number: 3409-4934-4253", "Warehouse: Apple Spot 13b"],
+      status: "completed",
+    },
+    {
+      id: "3",
+      title: "Order Confirmed",
+      time: "13/09/2023 3:53 pm",
+      status: "completed",
+    },
+    {
+      id: "4",
+      title: "Order Placed",
+      time: "13/09/2023 3:43 pm",
+      status: "completed",
+    },
+  ],
+};
+
+export const manualOrder: OrderDetails = {
+  id: "5914",
+  item: {
+    name: "Custom Handmade Watch Strap",
+    image: "/placeholder.svg?height=80&width=80",
+  },
+  courier: {
+    name: "Local Delivery",
+    company: "In-house",
+    isManualShipping: true,
+  },
+  startTime: "15 Jan 2023, 09:23:45",
+  address: "789 Craftsman Lane, Artisan City, AC 12345",
+  status: "in_progress",
+  timeline: [
+    {
+      id: "1",
+      title: "Crafting in Progress",
+      time: "15/01/2023 10:23 am",
+      details: [
+        "Estimated completion: 3-5 business days",
+        "Artisan: Master Craftsman Team",
+      ],
+      status: "in_progress",
+    },
+    {
+      id: "2",
+      title: "Order Confirmed",
+      time: "15/01/2023 9:53 am",
+      status: "completed",
+    },
+    {
+      id: "3",
+      title: "Order Placed",
+      time: "15/01/2023 9:23 am",
+      status: "completed",
+    },
+  ],
 };

@@ -22,8 +22,6 @@ export const NewsLetterButton: FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState(initialEmail);
 
-  console.log({ email, initialEmail });
-
   const onSubmit = () => {
     if (showModal) return setIsOpen(true);
     handleSubscribe();

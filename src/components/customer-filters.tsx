@@ -12,6 +12,8 @@ import { Button } from "./ui/button";
 import { IFilter } from "@/types";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import queryString from "query-string";
+import { useLocation } from "react-router-dom";
 
 const FILTERS = [
   {
@@ -33,8 +35,10 @@ export function CustomerFilters({
   onSearch: (term: string) => void;
   onSortSelect: (id: string) => void;
 }) {
+  const location = useLocation();
+  const { q = "" } = queryString.parse(location.search) as { q: string };
   const [filters, setFilters] = useState<IFilter[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(q);
 
   const removeFilter = (id: string) => {
     setFilters(filters.filter((filter) => filter.id !== id));

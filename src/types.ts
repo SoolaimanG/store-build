@@ -15,6 +15,7 @@ export enum PATHS {
   STORE_CUSTOMERS = "/store-customers/",
   STORE_INTEGRATIONS = "/store-integrations/",
   STORE = "/store/",
+  STORE_COUPON = "/store/coupon/",
 }
 
 export type IDashboardMetrics = {
@@ -162,6 +163,7 @@ export interface ICartItem {
 }
 
 export type IUseStoreBuildTypes = {
+  orderPlaced?: IOrder;
   openOTPValidator: IOtpValidator;
   openAddPaymentDetailsModal: boolean;
   currentStore?: IStore;
@@ -171,10 +173,23 @@ export type IUseStoreBuildTypes = {
   setUser: (props: Partial<IUser>) => void;
   setIsPaymentDetailsConfirmed: () => void;
   isPaymentConfirmed: boolean;
-  selectedProducts: IProduct[];
-  onProductSelect: (products: IProduct[]) => void;
+  selectedProducts: (IProduct & {
+    quantity: number;
+    color?: string;
+    size?: string;
+    type?: "dec" | "inc";
+  })[];
+  onProductSelect: (
+    products: (IProduct & {
+      quantity?: number;
+      color?: string;
+      size?: string;
+    })[]
+  ) => void;
   removeProduct: (productId: string) => void;
   setCurrentStore: (store: IStore) => void;
+  setOrderPlaced: (order: IOrder) => void;
+  adjustProductQuantity: (id: string, type: "inc" | "dec") => void;
 };
 
 export type IProductReview = {
@@ -394,20 +409,26 @@ export type IOrderPaymentDetails = {
 };
 
 export type ICustomerAddress = {
+  _id?: string;
   addressLine1: string;
   addressLine2: string;
   city: string;
   state: string;
-  postalCode: string;
+  postalCode?: string;
+  lat?: string;
+  lng?: string;
   country: string;
+  isDefault?: boolean;
 };
 
+export type IShippingMethods = "REGULAR" | "EXPRESS";
+
 export type IShippingDetails = {
-  shippingMethod: string;
-  shippingCost: number;
-  estimatedDeliveryDate: string;
-  trackingNumber: string;
-  carrier: "DHL";
+  shippingMethod: IShippingMethods;
+  shippingCost?: number;
+  estimatedDeliveryDate?: string;
+  trackingNumber?: string;
+  carrier: "SENDBOX";
 };
 
 export type IOrderStatus =
@@ -418,12 +439,14 @@ export type IOrderStatus =
   | "Shipped"
   | "Processing";
 
+export type IDeliveryType = "pick_up" | "waybill" | "sendbox";
+
 export type IOrder = {
   _id?: string;
   storeId: string;
   orderStatus: IOrderStatus;
   paymentDetails: IOrderPaymentDetails;
-  products: IProduct[];
+  products: (IProduct & { quantity: number; color?: string; size?: string })[];
   customerDetails: { shippingAddress: ICustomerAddress } & ICustomer;
   paymentMethod: string;
   amountPaid: number;
@@ -431,6 +454,8 @@ export type IOrder = {
   totalAmount: number;
   shippingDetails: IShippingDetails;
   note?: string;
+  deliveryType: IDeliveryType;
+  coupon?: string;
 } & ITimeStamp;
 
 export type IProductMedia = {
@@ -606,8 +631,314 @@ export interface Customer {
 }
 
 export interface CustomersResponse {
-  customerStats: ICustomerStats[];
   customers: Customer[];
   totalCustomers: number;
   totalPages: number;
+}
+
+export type ICoupon = {
+  _id?: string;
+  storeId: string;
+  couponCode?: string; // Optional for automatically applied discounts
+  expirationDate: string; // Prefer ISO 8601 format
+  selectedProducts: string[]; // Array of product IDs
+  selectedCategories: string[]; // Array of category IDs
+  appliedTo: "shoppingCart" | "products";
+  type: "percentageCoupon" | "nairaCoupon";
+  discountValue: number; // Percentage or amount based on `type`
+  maxUsage: number; // Total allowed usage across all customers
+  customerUsage?: Record<string, number>; // Optional: tracks usage per customer
+} & ITimeStamp;
+
+export type IDeliveryCostPayload = {
+  products: (IProduct & { color?: string; size?: string; quantity: number })[];
+  address: ICustomerAddress;
+  email: string;
+  name: string;
+  phoneNumber: string;
+  couponCode: string;
+};
+
+interface Dimension {
+  length: number;
+  width: number;
+  height: number;
+}
+
+interface EstimateBreakdown {
+  code: string;
+  name: string;
+  description: string;
+  value: number;
+}
+
+interface Estimate {
+  code: string;
+  name: string;
+  description: string;
+  value: number;
+  breakdown: EstimateBreakdown[];
+  exchange_rate: number;
+}
+
+interface Location {
+  country: string;
+  lat: number;
+  post_code: string;
+  first_name: string;
+  state: string;
+  city: string;
+  lng: number;
+  last_name?: string; // Optional, as it's only present in `destination`
+}
+
+interface Item {
+  name: string;
+  item_type: string;
+  value: number;
+  quantity: number;
+  weight: number;
+  hts_code: string;
+  disclaim: boolean;
+}
+
+export interface ShippingData {
+  customs_option: string;
+  dimension: Dimension;
+  incoming_option: string;
+  estimate: Estimate;
+  weight: number;
+  currency: string;
+  service_code: string;
+  origin: Location;
+  destination: Location;
+  items: Item[];
+  service_type: string;
+  total_value: number;
+  pickup_date: string; // ISO date string
+  package_type: string;
+  region: string;
+  instance_id: string;
+  user_id: string;
+  entity_id: string | null; // Can be null
+}
+
+export interface Address {
+  id: string;
+  label: string;
+  name: string;
+  phone: string;
+  addressLine: string;
+  country: string;
+  state: string;
+  city: string;
+  zipCode: string;
+  isDefault?: boolean;
+}
+
+export interface AddressFormData {
+  isDefault?: boolean;
+  name: string;
+  phone: string;
+  addressLine: string;
+  country: string;
+  state: string;
+  city: string;
+  zipCode: string;
+}
+
+export interface BreakdownItem {
+  code: string;
+  name: string;
+  value: number;
+  description?: string;
+}
+
+export interface Rate {
+  base_fee: number;
+  is_enabled: boolean;
+  applied_credits: number;
+  volumetric_weight: number;
+  currency: string;
+  pickup_date: string; // ISO datetime string
+  discount_fee: number;
+  rate_type: string;
+  vat: number;
+  customs_options: string[];
+  insurance_fee: number;
+  caption: string;
+  additional_fee: number;
+  billable_weight: number;
+  service_code: string;
+  insurance_option: string;
+  insurance_cap: number;
+  fee: number;
+  delivery_eta_string: string;
+  pickup_eta_string: string;
+  breakdown: BreakdownItem[];
+  delivery_window: string;
+  rate_card_id: string;
+  sla_description: string;
+  code: string;
+  description: string;
+  name: string;
+  key: string;
+  delivery_date: string; // ISO datetime string
+  pickup_window: string;
+}
+
+export interface IItem {
+  value: number;
+  quantity: number;
+  name: string;
+  item_type: string;
+  hts_code: string;
+  disclaim: boolean;
+}
+
+export interface Address {
+  country: string;
+  state: string;
+  last_name: string;
+  lat: number;
+  first_name: string;
+  post_code: string;
+  city: string;
+  lng: number;
+}
+
+export interface ShipmentResponse {
+  package_type: string;
+  service_code: string;
+  status: string;
+  destination: Address;
+  currency: string;
+  items: IItem[];
+  weight: number;
+  rates: Rate[];
+  origin: Address;
+  region: string;
+  rate: Rate;
+  service_type: string;
+  rate_type: string;
+}
+
+export interface OrderDetails {
+  id: string;
+  item: {
+    name: string;
+    image: string;
+  };
+  courier: {
+    name: string;
+    company: string;
+    isManualShipping: boolean;
+  };
+  startTime: string;
+  address: string;
+  status: "pending" | "in_progress" | "delivered" | "cancelled";
+  tracking?: {
+    number: string;
+    warehouse: string;
+    estimatedDelivery: string;
+  };
+  timeline: TimelineEvent[];
+}
+
+export interface TimelineEvent {
+  id: string;
+  title: string;
+  time: string;
+  details?: string[];
+  status: "completed" | "in_progress" | "pending";
+}
+
+export interface TimelineEvent {
+  id: string;
+  title: string;
+  time: string;
+  details?: string[];
+  status: "completed" | "in_progress" | "pending";
+}
+
+export interface VerifyChargeResponse {
+  id: number;
+  domain: string;
+  status: string;
+  reference: string;
+  receipt_number: string | null;
+  amount: number;
+  message: string | null;
+  gateway_response: string;
+  paid_at: string;
+  created_at: string;
+  channel: string;
+  currency: string;
+  ip_address: string;
+  metadata: string | null;
+  log: {
+    start_time: number;
+    time_spent: number;
+    attempts: number;
+    errors: number;
+    success: boolean;
+    mobile: boolean;
+    input: any[];
+    history: {
+      type: string;
+      message: string;
+      time: number;
+    }[];
+  };
+  fees: number;
+  fees_split: string | null;
+  authorization: {
+    authorization_code: string;
+    bin: string;
+    last4: string;
+    exp_month: string;
+    exp_year: string;
+    channel: string;
+    card_type: string;
+    bank: string;
+    country_code: string;
+    brand: string;
+    reusable: boolean;
+    signature: string;
+    account_name: string | null;
+  };
+  customer: {
+    id: number;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    customer_code: string;
+    phone: string | null;
+    metadata: string | null;
+    risk_action: string;
+    international_format_phone: string | null;
+  };
+  plan: string | null;
+  split: Record<string, any>;
+  order_id: string | null;
+  paidAt: string;
+  createdAt: string;
+  requested_amount: number;
+  pos_transaction_data: string | null;
+  source: string | null;
+  fees_breakdown: string | null;
+  connect: string | null;
+  transaction_date: string;
+  plan_object: Record<string, any>;
+  subaccount: Record<string, any>;
+}
+
+export interface chargeResponse {
+  status: boolean;
+  message: string;
+  data: {
+    authorization_url: string;
+    access_code: string;
+    reference: string;
+  };
 }

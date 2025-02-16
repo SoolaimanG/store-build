@@ -15,13 +15,13 @@ export const EmptyProductState: FC<{
   ...rest
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+    <div className="flex h-[23rem] space-y-3 flex-col items-center justify-center p-8 text-center rounded-lg">
       <div className="bg-muted/30 p-4 rounded-full">
         {rest.icon && <rest.icon className="h-12 w-12 text-muted-foreground" />}
       </div>
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold">{header}</h3>
-        <p className="text-muted-foreground">{message}</p>
+        <h3 className="text-lg font-medium mb-2">{header}</h3>
+        <p className="text-sm text-muted-foreground">{message}</p>
       </div>
       {children}
     </div>

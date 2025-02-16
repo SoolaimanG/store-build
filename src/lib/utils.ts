@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import {
   apiResponse,
+  chargeResponse,
   Customer,
   CustomersResponse,
   getProductsTypes,
@@ -10,7 +11,12 @@ import {
   ICategory,
   IChatBotIntegration,
   ICheckFor,
+  ICoupon,
+  ICustomer,
+  ICustomerAddress,
+  ICustomerStats,
   IDashboardMetrics,
+  IDeliveryCostPayload,
   IDeliveryIntegration,
   IIntegrationType,
   IJoinNewsLetterFrom,
@@ -26,6 +32,8 @@ import {
   IStore,
   IStoreTheme,
   IUser,
+  ShipmentResponse,
+  ShippingData,
 } from "@/types";
 import qs from "query-string";
 import Cookie from "js-cookie";
@@ -212,21 +220,23 @@ export class StoreBuild {
 
   async getOrders(
     q?: string,
-    startPage?: number,
-    endPage?: number,
+    start?: number,
+    end?: number,
     asc = false,
     filter: IOrderStatus | "All" = "All",
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    sort?: string
   ) {
     const _q = queryString.stringify({
       q,
-      startPage,
-      endPage,
+      start,
+      end,
       asc,
       filter,
       startDate,
       endDate,
+      sort,
     });
 
     const res: {
@@ -286,7 +296,8 @@ export class StoreBuild {
   }
 
   async calculateProductsPrice(
-    cartItems: { productId: string; color?: string; size?: string }[]
+    cartItems: { productId: string; color?: string; size?: string }[],
+    couponCode?: string
   ) {
     const res: {
       data: apiResponse<{
@@ -294,7 +305,7 @@ export class StoreBuild {
         discountedAmount: number;
         discountPercentage: number;
       }>;
-    } = await api.post(`/calculate-products-price/`, { cartItems });
+    } = await api.post(`/calculate-products-price/`, { cartItems, couponCode });
 
     return res.data;
   }
@@ -414,20 +425,27 @@ export class StoreBuild {
     return res.data;
   }
 
-  async createOrder(order: IOrder, storeId?: string) {
+  async createOrder(
+    order: Partial<IOrder>,
+    storeId?: string,
+    couponCode?: string
+  ) {
     const res: { data: apiResponse<IOrder> } = await api.post(
       `/create-order/`,
-      { order, storeId },
+      { order, storeId, couponCode },
       { headers: { Authorization: this.getSessionToken } }
     );
     return res.data;
   }
 
-  async getOrder<T = any>(orderId: string) {
-    const res: apiResponse<{ data: { order: IOrder; deliveryDetails: T } }> =
-      await api.get(`/get-orders/${orderId}/`, {
+  async getOrder<T = any>(orderId: string, storeId?: string) {
+    const q = queryString.stringify({ storeId });
+    const res: { data: apiResponse<T> } = await api.get(
+      `/get-orders/${orderId}/?${q}`,
+      {
         headers: { Authorization: this.getSessionToken },
-      });
+      }
+    );
 
     return res.data;
   }
@@ -528,7 +546,202 @@ export class StoreBuild {
 
     return res.data;
   }
+
+  async getProductsWithIds(ids: string[]) {
+    const q = queryString.stringify({ ids });
+    const res: { data: apiResponse<IProduct[]> } = await api.get(
+      "/get-products-with-ids/?" + q
+    );
+    return res.data;
+  }
+
+  async createCoupon(payload: ICoupon) {
+    const res: { data: apiResponse<ICoupon> } = await api.post(
+      `/create-coupon/`,
+      payload,
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+    return res.data;
+  }
+
+  async getCoupons(size = 20) {
+    const q = queryString.stringify({ size });
+    const res: { data: apiResponse<ICoupon[]> } = await api.get(
+      `/get-coupons/?${q}`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async deleteCoupon(couponId: string) {
+    const res: { data: apiResponse } = await api.delete(
+      `/delete-coupon/${couponId}/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  async calculateDeliveryCost(storeId: string, payload: IDeliveryCostPayload) {
+    const res: { data: apiResponse<ShipmentResponse> } = await api.post(
+      `/calculate-delivery-cost/${storeId}/`,
+      payload
+    );
+    return res.data;
+  }
+
+  async getStoreAddresses() {
+    const res: {
+      data: apiResponse<(ICustomerAddress & { isDefault: boolean })[]>;
+    } = await api.get(`/get-store-addresses/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async addOrEditStoreAddress(address: ICustomerAddress) {
+    const res: { data: apiResponse } = await api.post(
+      `/add-or-edit-store-address/`,
+      { address },
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async deleteStoreAddress(addressId: string) {
+    const res: { data: apiResponse } = await api.delete(
+      `/delete-store-address/${addressId}/`,
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async getCoupon(couponCode: string) {
+    const res: { data: apiResponse<ICoupon> } = await api.get(
+      `/get-coupons/${couponCode}/`
+    );
+    return res.data;
+  }
+
+  async completeOrderPayment(orderId: string, storeId?: string) {
+    const res: { data: apiResponse<IOrder> } = await api.post(
+      `/complete-payment/${orderId}/`,
+      { storeId }
+    );
+    return res.data;
+  }
+
+  async editDeliveryAddress(
+    orderId: string,
+    storeId: string,
+    address: ICustomerAddress
+  ) {
+    const res: { data: apiResponse<IOrder> } = await api.patch(
+      `/edit-delivery-address/${orderId}/`,
+      { storeId, address }
+    );
+
+    return res.data;
+  }
+
+  async requestCancelOrder(orderId: string, storeId: string) {
+    const q = queryString.stringify({ storeId });
+    const res: { data: apiResponse } = await api.get(
+      `/request-cancel-order/${orderId}/?${q}`
+    );
+    return res.data;
+  }
+
+  async requestConfirmationOrder(orderId: string, storeId: string) {
+    const q = queryString.stringify({ storeId });
+    const res: { data: apiResponse } = await api.get(
+      `/request-confirmation-order/${orderId}/?${q}`
+    );
+
+    return res.data;
+  }
+
+  async initializeChargeForSubscription(autoRenew = true, months = 1) {
+    const res: { data: apiResponse<chargeResponse> } = await api.post(
+      `initialize-charge-for-subscription`,
+      {
+        autoRenew,
+        months,
+      },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getSalesChartData() {
+    const res: { data: apiResponse<{ month: string; sale: number }[]> } =
+      await api.get(`/get-sales-chart-data/`, {
+        headers: { Authorization: this.getSessionToken },
+      });
+    return res.data;
+  }
+
+  async getOrderMetrics() {
+    const res: {
+      data: apiResponse<{
+        totalOrders: number;
+        deliveredOverTime: number;
+        returns: number;
+        avgOrderValue: number;
+        totalOrderAmount: number;
+      }>;
+    } = await api.get(`/get-order-metrics/`, {
+      headers: {
+        Authorization: this.getSessionToken,
+      },
+    });
+
+    return res.data;
+  }
+
+  async createDeliveryPickup(
+    orderId: string,
+    type: string,
+    estimatedDeliveryDate?: string
+  ) {
+    const res: { data: apiResponse } = await api.post(
+      `/create-delivery-pickup/${orderId}`,
+      { type, estimatedDeliveryDate },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  async getCustomersStats() {
+    const res: { data: apiResponse<{ customerStats: ICustomerStats[] }> } =
+      await api.get(`/get-customers-stats/`, {
+        headers: { Authorization: this.getSessionToken },
+      });
+    return res.data;
+  }
 }
+
+export const formatDate = (
+  date: string,
+  day: "numeric" | "2-digit" = "numeric",
+  year: "numeric" | "2-digit" = "numeric"
+) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day,
+    year,
+  });
+};
 
 export const getProductPrice = (product: IProduct, size: string) => {
   let price: number | undefined = 0;
@@ -565,6 +778,14 @@ export const doesAllCategoriesHasImage = (categories: ICategory[]) => {
   if (!categories.length) return false;
 
   return categories.every((category) => Boolean(category.img));
+};
+
+export const allProductsAreDigital = (products: IProduct[] = []) =>
+  products.every((product) => product?.isDigital);
+
+export const sumUpValues = <T = any[]>(data: T, key: string) => {
+  // @ts-ignore
+  return data?.reduce((acc, curr) => acc + curr[key], 0);
 };
 
 export const uploadImage = async (file: File) => {

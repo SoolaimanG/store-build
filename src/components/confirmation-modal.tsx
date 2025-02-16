@@ -24,7 +24,7 @@ export function ConfirmationModal({
   isOpen = false,
   onClose = () => {},
   onConfirm,
-  message = "Are you sure you want to delete the produce? This action cannot be undone.",
+  message = "Are you sure you want to delete the product? This action cannot be undone.",
   title = "Delete",
   children = <div />,
 }: ConfirmationModalProps) {

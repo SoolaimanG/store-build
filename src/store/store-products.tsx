@@ -26,7 +26,6 @@ import GridDisplay from "./grid-display";
 import { PaginationFooter } from "@/components/pagination-footer";
 import { useLocation } from "react-router-dom";
 import queryString from "query-string";
-import NoProductsFound from "./no-product-found";
 
 const StoreProducts = () => {
   const location = useLocation();
@@ -53,7 +52,7 @@ const StoreProducts = () => {
   const { currentStore } = useStoreBuildState();
   const { _id = "", customizations } = currentStore || {};
 
-  const { isLoading, data, error, refetch } = useQuery({
+  const { isLoading, isRefetching, data, error, refetch } = useQuery({
     queryKey: ["products", _id, colors, category, rating, _priceRange],
     queryFn: () =>
       storeBuilder.getProducts(_id, {
@@ -105,7 +104,7 @@ const StoreProducts = () => {
                     priceRange={productData?.filters.priceRange}
                     sizes={productData?.filters.allSizes || []}
                     colors={productData?.filters.allColors!}
-                    className="h-[630px]"
+                    className="h-[630px] md:h-[500px]"
                     buttonColor={customizations.theme.primary}
                   />
                 </SheetContent>
@@ -138,9 +137,9 @@ const StoreProducts = () => {
         </header>
         <div className="mt-10">
           <GridDisplay
-            isLoading={isLoading}
+            isLoading={[isLoading, isRefetching]}
             products={productData?.products || []}
-            onRefresh={refetch}
+            onRefresh={() => refetch()}
           />
         </div>
         <PaginationFooter

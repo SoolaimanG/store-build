@@ -10,10 +10,10 @@ import {
   CreditCard,
   ShoppingCart,
   Download,
-  Plus,
   ArrowUp,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -55,10 +55,11 @@ import {
 } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useToastError } from "@/hooks/use-toast-error";
-import { Customer, ICustomerStats, IOrder, PATHS } from "@/types";
+import { Customer, IOrder, PATHS } from "@/types";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerFilters } from "@/components/customer-filters";
+import { EmptyProductState } from "@/components/empty";
 
 interface CustomerTableProps {
   selectedCustomers: string[];
@@ -85,6 +86,8 @@ const DashboardCustomers = () => {
         sortCustomer
       ),
   });
+
+  console.log({ isLoading, data });
 
   const { data: __data } = data || {};
 
@@ -123,10 +126,7 @@ const DashboardCustomers = () => {
         </div>
       </motion.div>
 
-      <CustomerStats
-        customerStats={__data?.customerStats || []}
-        isLoading={isLoading}
-      />
+      <CustomerStats />
 
       <CustomerFilters onSearch={handleSearch} onSortSelect={setSortCustomer} />
 
@@ -190,13 +190,18 @@ const DashboardCustomers = () => {
   );
 };
 
-function CustomerStats({
-  customerStats,
-  isLoading,
-}: {
-  customerStats: ICustomerStats[];
-  isLoading: boolean;
-}) {
+function CustomerStats() {
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["customer-stat"],
+    queryFn: () => storeBuilder.getCustomersStats(),
+  });
+
+  const { data: _data } = data || {};
+
+  const { customerStats = [] } = _data || {};
+
+  useToastError(error);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -248,6 +253,15 @@ function CustomerTable({
   customers,
   isLoading,
 }: CustomerTableProps) {
+  if (!customers.length)
+    return (
+      <EmptyProductState
+        icon={Users}
+        header="No Customer found"
+        message="No customer match your query or something went wrong."
+      />
+    );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

@@ -1,18 +1,18 @@
-"use client";
-
 import * as React from "react";
 import {
-  ArrowDownUp,
-  ArrowUpDown,
+  ArrowDown,
+  ArrowUp,
   Calendar,
-  ChevronDown,
-  ChevronUp,
-  Logs,
-  MoreVertical,
+  LogInIcon as Logs,
+  PackageSearch,
+  Plus,
+  PlusCircle,
   PlusIcon,
   Search,
+  Timer,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 import {
   Table,
@@ -33,24 +33,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  addEllipseToText,
   addQueryParameter,
   cn,
   formatAmountToNaira,
   generateRandomString,
-  getInitials,
-  getOrderProductCount,
   storeBuilder,
 } from "@/lib/utils";
 import { PaginationFooter } from "@/components/pagination-footer";
 import queryString from "query-string";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { IOrderStatus, PATHS } from "@/types";
+import { type IOrderStatus, PATHS } from "@/types";
 import { useToastError } from "@/hooks/use-toast-error";
 import { EmptyProductState } from "@/components/empty";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import OrdersLoading from "@/components/loaders/orders-loading";
+import { OrderStats } from "@/components/order-stats";
+import { Text } from "@/components/text";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { DatePickerWithRange } from "@/components/ui/range-date-picker";
+import { DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
+import { useStoreBuildState } from "@/store";
 
 const statusColors: Record<IOrderStatus, any> = {
   Pending: "bg-yellow-100 text-yellow-800",
@@ -61,14 +64,39 @@ const statusColors: Record<IOrderStatus, any> = {
   Shipped: "",
 };
 
+const SORTS = [
+  {
+    value: "recent-orders",
+    label: "Recent Orders",
+    icon: Timer,
+  },
+  {
+    value: "highest-orders",
+    label: "Highest Order",
+    icon: ArrowUp,
+  },
+  {
+    value: "lowest-orders",
+    label: "Lowest Orders",
+    icon: ArrowDown,
+  },
+  {
+    value: "more-products",
+    label: "More Products",
+    icon: PackageSearch,
+  },
+];
+
 export default function DashboardOrders() {
+  const { user } = useStoreBuildState();
+  const isMobile = useMediaQuery("(max-width:767px)");
   const location = useLocation();
   const n = useNavigate();
-  const [expandedRow, setExpandedRow] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
-  const filterScrollRef = React.useRef<HTMLDivElement>(null);
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: undefined,
+    to: addDays(new Date(), 20),
+  });
   const {
     filter = "All",
     page = 1,
@@ -82,14 +110,19 @@ export default function DashboardOrders() {
     asc?: boolean;
   };
 
-  const toggleRow = (orderId: string) => {
-    setExpandedRow(expandedRow === orderId ? null : orderId);
-  };
+  React.useEffect(() => {
+    if (!user?.createdAt) return;
+    setDate({ ...date, from: new Date(user?.createdAt!) });
+  }, [user?.createdAt]);
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (filterScrollRef.current) {
-      filterScrollRef.current.scrollLeft += e.deltaY;
-    }
+  const [sorts, setSorts] = React.useState<string[]>([]);
+
+  const handleFilterSelect = (filter: string) => {
+    setSorts((prev) =>
+      !prev.includes(filter)
+        ? [...prev, filter]
+        : prev.filter((p) => p !== filter)
+    );
   };
 
   const onFilterChange = (newFilter: IOrderStatus | "All") => {
@@ -97,22 +130,22 @@ export default function DashboardOrders() {
   };
 
   const { isLoading, data, error } = useQuery({
-    queryKey: ["orders", searchQuery, startDate, endDate, filter, asc, page],
+    queryKey: ["orders", searchQuery, date, filter, asc, page, sorts],
     queryFn: () =>
       storeBuilder.getOrders(
         searchQuery,
+        0,
         10 * page,
-        undefined,
         asc,
         filter,
-        startDate?.toISOString(),
-        endDate?.toISOString()
+        date?.from?.toISOString(),
+        date?.to?.toISOString(),
+        sorts.join(",")
       ),
+    enabled: Boolean(user?.createdAt),
   });
 
   const { data: order } = data || {};
-
-  console.log(data);
 
   const filters: {
     label: IOrderStatus | "All";
@@ -128,23 +161,86 @@ export default function DashboardOrders() {
   useToastError(error);
 
   return (
-    <div className="w-full container mx-auto p-4 space-y-8">
-      <motion.header
-        className="flex w-full items-center justify-between"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <h1 className="text-4xl font-bold tracking-tight">Orders</h1>
-        <Button asChild size="sm" variant="ringHover" className="gap-2">
-          <Link
-            to={PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"}
-          >
-            <PlusIcon size={18} />
+    <div className="w-full container mx-auto p-4 space-y-8 overflow-hidden">
+      {/* Order Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-4xl">Orders</h2>
+        <Link
+          to={PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"}
+        >
+          <Button variant="ringHover" className="rounded-none gap-2">
+            <Plus size={18} />
             Create Order
-          </Link>
-        </Button>
-      </motion.header>
+          </Button>
+        </Link>
+      </div>
+
+      {/* Order Body */}
+      <div className="w-full space-y-6">
+        {/* Order Stats */}
+        <OrderStats />
+
+        <div className="flex gap-1 border-b overflow-auto">
+          <motion.div className="relative">
+            <Button
+              variant={filter === "All" ? "default" : "ghost"}
+              className={cn(
+                "relative h-9 rounded-none bg-slate-950 hover:bg-slate-950 hover:text-primary border-b-2 border-transparent px-2",
+                filter === "All" && "font-bold text-primary"
+              )}
+              onClick={() => onFilterChange("All")}
+            >
+              All Orders
+              <Badge
+                variant={filter === "All" ? "default" : "secondary"}
+                className={cn(
+                  "ml-2 rounded-sm",
+                  filter !== "All" && "bg-slate-800"
+                )}
+              >
+                {order?.orderStatusCount.All || 0}
+              </Badge>
+            </Button>
+            {filter === "All" && (
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                layoutId="activeTab"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}{" "}
+          </motion.div>
+          {filters.slice(1).map((item) => (
+            <motion.div key={item.label} className="relative">
+              <Button
+                variant={filter === item.label ? "default" : "ghost"}
+                className={cn(
+                  "relative h-9 rounded-none border-b-2 bg-slate-950 hover:bg-slate-950 hover:text-primary border-transparent px-2",
+                  filter === item.label && "font-bold text-primary"
+                )}
+                onClick={() => onFilterChange(item.label)}
+              >
+                {item.label}
+                <Badge
+                  variant={filter === item.label ? "default" : "secondary"}
+                  className={cn(
+                    "ml-2 rounded-sm",
+                    filter !== item.label && "bg-slate-800"
+                  )}
+                >
+                  {item.value}
+                </Badge>
+              </Button>
+              {filter === item.label && (
+                <motion.div
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                  layoutId="activeTab"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}{" "}
+            </motion.div>
+          ))}
+        </div>
+      </div>
 
       <motion.div
         className="flex flex-col space-y-4"
@@ -152,71 +248,82 @@ export default function DashboardOrders() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <div
-          ref={filterScrollRef}
-          onWheel={handleWheel}
-          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
-          style={{
-            scrollBehavior: "smooth",
-            WebkitOverflowScrolling: "touch",
-            msOverflowStyle: "none",
-            scrollbarWidth: "none",
-          }}
-        >
-          {filters.map((item) => (
-            <Button
-              key={item.label}
-              size="sm"
-              variant={filter === item.label ? "default" : "outline"}
-              className="gap-2 shrink-0 rounded-none"
-              onClick={() => onFilterChange(item.label)}
-            >
-              {item.label}
-              <Badge variant="secondary" className="hover:bg-purple-900">
-                {item.value}
-              </Badge>
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-4 w-full">
-          <div className="flex flex-col md:flex-row items-center gap-2 w-full">
-            <div className="w-full flex items-center gap-3">
-              <Calendar size={21} className="text-gray-500" />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
-                type="date"
-                value={startDate ? startDate.toISOString().slice(0, 10) : ""}
-                onChange={(e) =>
-                  setStartDate(
-                    e.target.value ? new Date(e.target.value) : undefined
-                  )
-                }
-                className="w-full"
+                placeholder="Find order..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-none"
               />
             </div>
-            <div className="w-full flex items-center gap-3">
-              <span className="hidden md:inline">To</span>
-              <Calendar size={21} className="text-gray-500" />
-              <Input
-                type="date"
-                value={endDate ? endDate.toISOString().slice(0, 10) : ""}
-                onChange={(e) =>
-                  setEndDate(
-                    e.target.value ? new Date(e.target.value) : undefined
-                  )
-                }
-                className="w-full"
-              />
+            <DatePickerWithRange date={date} setDate={setDate}>
+              <Button variant="ringHover" size="sm" className="rounded-none">
+                <Calendar className="h-4 w-4" />
+              </Button>
+            </DatePickerWithRange>
+            <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-none space-x-2 bg-slate-900 border border-dashed border-gray-700 px-3"
+                  >
+                    <div className="gap-2 flex items-center">
+                      <PlusCircle className="h-4 w-4" />
+                      Sorts
+                    </div>
+                    {sorts.length >= 3 && (
+                      <React.Fragment>
+                        <div className="h-full border border- w-1 ml-2" />
+                        <Text>{sorts.length}</Text>
+                      </React.Fragment>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="space-y-1">
+                  {SORTS.map((filter, idx) => (
+                    <DropdownMenuItem
+                      className={cn(
+                        sorts.includes(filter.value) && "bg-accent"
+                      )}
+                      onClick={() => handleFilterSelect(filter.value)}
+                      key={idx}
+                    >
+                      <filter.icon />
+                      {filter.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {sorts.length > 0 && (
+                <Button
+                  onClick={() => setSorts([])}
+                  size="sm"
+                  variant="ghost"
+                  className="gap-2 rounded-none"
+                >
+                  Reset
+                  <X size={17} />
+                </Button>
+              )}
             </div>
           </div>
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <Input
-              placeholder="Search customer or order number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="space-x-2">
+            {sorts.length < 3 &&
+              sorts.map((f, idx) => (
+                <Button
+                  key={idx}
+                  size="sm"
+                  variant="secondary"
+                  className="gap-2 rounded-none capitalize"
+                >
+                  {f}
+                </Button>
+              ))}
           </div>
         </div>
       </motion.div>
@@ -233,213 +340,93 @@ export default function DashboardOrders() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead
-                      onClick={() =>
-                        n("?" + addQueryParameter("asc", String(!Boolean(asc))))
-                      }
-                      className="flex items-center gap-1"
-                    >
-                      Order
-                      {asc ? (
-                        <ArrowDownUp size={16} />
-                      ) : (
-                        <ArrowUpDown size={16} />
-                      )}
-                    </TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[100px]">Order ID</TableHead>
+                    <TableHead>Created at</TableHead>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Products</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    {!isMobile && <TableHead>Priority</TableHead>}
+                    <TableHead>Total</TableHead>
+                    {!isMobile && <TableHead>Payment status</TableHead>}
+                    <TableHead>Items</TableHead>
+                    {!isMobile && <TableHead>Delivery number</TableHead>}
+                    <TableHead>Order status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {order.orders.map((order) => (
-                    <React.Fragment key={order._id}>
-                      <motion.tr
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleRow(order._id || "")}
-                            aria-label={
-                              expandedRow === order._id
-                                ? "Collapse order details"
-                                : "Expand order details"
-                            }
-                          >
-                            {expandedRow === order._id ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {order._id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {addEllipseToText(
-                                order.customerDetails.name || "",
-                                11
-                              )}
-                            </span>
-                            <span
-                              title={order?.customerDetails?.email}
-                              className="text-sm text-gray-500"
-                            >
-                              {addEllipseToText(
-                                order.customerDetails.email,
-                                12
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(order.createdAt || "").toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{order.products.length}</TableCell>
-                        <TableCell>
-                          {formatAmountToNaira(order.totalAmount)}
-                        </TableCell>
+                    <TableRow
+                      onClick={() =>
+                        n(PATHS.STORE_ORDERS + order._id, {
+                          viewTransition: true,
+                          flushSync: false,
+                        })
+                      }
+                      key={order._id}
+                      className="hover:bg-muted/50"
+                    >
+                      <TableCell className="font-medium">
+                        #{order._id}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(order.createdAt || "").toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to={`${PATHS.STORE_CUSTOMERS}?q=${order.customerDetails.name}`}
+                          className="text-blue-500 hover:underline"
+                        >
+                          {order.customerDetails.name}
+                        </Link>
+                      </TableCell>
+                      {!isMobile && <TableCell>{"Normal"}</TableCell>}
+                      <TableCell>
+                        {formatAmountToNaira(order.totalAmount)}
+                      </TableCell>
+                      {!isMobile && (
                         <TableCell>
                           <Badge
-                            variant="secondary"
-                            className={cn(
-                              statusColors[order.orderStatus],
-                              "rounded-md"
-                            )}
+                            variant={
+                              order.paymentDetails.paymentStatus === "paid"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="rounded-sm"
                           >
-                            {order.orderStatus}
+                            {order.paymentDetails.paymentStatus}
                           </Badge>
                         </TableCell>
+                      )}
+                      <TableCell>{order.products.length} items</TableCell>
+                      {!isMobile && (
                         <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={PATHS.STORE_ORDERS + order._id}>
-                                  View Details
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                {" "}
-                                <Link
-                                  to={
-                                    PATHS.STORE_ORDERS +
-                                    order._id +
-                                    "/create/#edit"
-                                  }
-                                >
-                                  Edit Order
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>Delete Order</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {order.shippingDetails.trackingNumber || "-"}
                         </TableCell>
-                      </motion.tr>
-                      <AnimatePresence>
-                        {expandedRow === order._id && (
-                          <motion.tr
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <TableCell colSpan={8}>
-                              <motion.div
-                                className="space-y-4 p-4"
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.2, delay: 0.05 }}
-                              >
-                                {order.products.map((product, index) => (
-                                  <motion.div
-                                    key={index}
-                                    className="flex items-center justify-between gap-4 rounded-lg border p-4"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{
-                                      duration: 0.2,
-                                      delay: index * 0.05,
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      <div className="h-16 w-16 overflow-hidden rounded-lg border">
-                                        <Avatar className="h-full w-full object-cover rounded-md">
-                                          <AvatarImage
-                                            className=""
-                                            src={product.media[0]?.url}
-                                            alt={
-                                              product.media[0]?.altText ||
-                                              product.productName
-                                            }
-                                          />
-                                          <AvatarFallback className="rounded-md w-full">
-                                            {getInitials(product.productName)}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      </div>
-                                      <div>
-                                        <h4 className="font-medium">
-                                          {product.productName}
-                                        </h4>
-                                        <p className="text-sm text-gray-500">
-                                          SKU: {product.stockQuantity}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-8">
-                                      <div className="text-right">
-                                        <p className="font-medium">Quantity</p>
-                                        <p className="text-gray-500">
-                                          x
-                                          {getOrderProductCount(
-                                            order.products || [],
-                                            product._id || ""
-                                          )}
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="font-medium">Price</p>
-                                        <p className="text-gray-500">
-                                          {formatAmountToNaira(
-                                            product.price.default
-                                          )}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                              </motion.div>
-                            </TableCell>
-                          </motion.tr>
-                        )}
-                      </AnimatePresence>
-                    </React.Fragment>
+                      )}
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            statusColors[order.orderStatus],
+                            "rounded-sm"
+                          )}
+                        >
+                          {order.orderStatus}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         ) : (
-          <EmptyProductState icon={Logs} header="No orders found">
-            <Button variant="ringHover" asChild className="gap-2">
+          <EmptyProductState icon={Logs} header="No Orders Found">
+            <Button
+              size="lg"
+              variant="ringHover"
+              asChild
+              className="gap-2 rounded-none"
+            >
               <Link
                 to={
                   PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"

@@ -83,7 +83,7 @@ export const EachSection: FC<ISection & { storeId: string }> = ({
         {display === "flex" ? (
           carouselDisplay
         ) : (
-          <GridDisplay isLoading={isLoading} products={_products} />
+          <GridDisplay isLoading={[isLoading]} products={_products} />
         )}
       </div>
       <div className="w-full flex items-center justify-center">

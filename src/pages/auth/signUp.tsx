@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-
 import { Logo } from "@/components/logo";
 import { Text } from "@/components/text";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStoreBuildState } from "@/store";
 import queryString from "query-string";
-import VerifyEmailBtn from "@/components/verify-email-btn";
 import { toast } from "@/hooks/use-toast";
 import { useAuthentication } from "@/hooks/use-authentication";
 import OpenSubscribeWindowBtn from "@/components/open-subscribe-window-btn";
@@ -262,7 +260,13 @@ const SelectProductYouSell: FC<IStepProps> = ({ onBack, onNext, data }) => {
       );
       console.log(res.data);
       onNext(values);
-      setOpenOTPValidator({ open: true });
+      setOpenOTPValidator({
+        open: true,
+        header: "Verify Email",
+        desc: "An account has been created for you but first verify your account to continue.",
+        otpFor: "verify-email",
+        userEmail: payload.email,
+      });
     } catch (error) {
       const _error = errorMessageAndStatus(error);
       toast({
@@ -367,9 +371,10 @@ const SelectProductYouSell: FC<IStepProps> = ({ onBack, onNext, data }) => {
   );
 };
 
-const AccountCreated: FC<IStepProps> = () => {
+const AccountCreated: FC<IStepProps> = ({ data }) => {
   const location = useLocation();
   const { user } = useAuthentication(undefined, 3000);
+  const { setOpenOTPValidator } = useStoreBuildState();
 
   const qs = queryString.parse(location.search) as {
     subscribe: "";
@@ -398,7 +403,7 @@ const AccountCreated: FC<IStepProps> = () => {
         Great, Your account has been created successfully.
       </motion.h2>
       <motion.div variants={itemVariants}>
-        <Text className="">
+        <Text className="tracking-tight">
           Your account has been successfully created! Welcome aboard. You can
           now explore all features, manage your settings, and start building
           your online presence. We're excited to have you with us!
@@ -414,19 +419,26 @@ const AccountCreated: FC<IStepProps> = () => {
             whileHover="hover"
             whileTap="tap"
           >
-            <VerifyEmailBtn otpFor="verify-email">
-              <Button
-                variant="ringHover"
-                className="rounded-full h-[3rem] px-9"
-              >
-                Verify Email
-              </Button>
-            </VerifyEmailBtn>
+            <Button
+              variant="ringHover"
+              className="rounded-full h-[3rem] px-9"
+              onClick={() => {
+                setOpenOTPValidator({
+                  open: true,
+                  otpFor: "verify-email",
+                  userEmail: data.email,
+                  header: "Account Created",
+                  desc: "Please verify your account to continue your journey.",
+                });
+              }}
+            >
+              Verify Email
+            </Button>
           </motion.div>
         )}
         <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
           <Button
-            variant={user?.isEmailVerified ? "default" : "ghost"}
+            variant={user?.isEmailVerified ? "ringHover" : "ghost"}
             asChild
             className="hover:bg-slate-800 rounded-full h-[3rem] px-9 hover:text-white transition-colors duration-300"
           >
@@ -464,7 +476,7 @@ export default function SignUp() {
     fullName: "",
   });
   const location = useLocation();
-  const navigate = useNavigate();
+  const n = useNavigate();
 
   const steps = [
     (props: IStepProps) => <EnterEmail {...props} />,
@@ -498,11 +510,10 @@ export default function SignUp() {
       const nextPage = currentPage + 1;
       const updatedData = { ...data, ...newData };
       if (nextPage < steps.length) {
-        console.log(nextPage, steps.length);
         setCurrentPage(nextPage);
         setData(updatedData);
         const key = Object.keys(newData)[0] as keyof ISignUp;
-        navigate(`?${addQueryParameter(key, updatedData[key])}`);
+        n(`?${addQueryParameter(key, updatedData[key])}`);
       }
     } catch (error) {
       const _error = errorMessageAndStatus(error);
@@ -523,7 +534,7 @@ export default function SignUp() {
         ...qs.parse(location.search),
         [key]: undefined,
       });
-      navigate(`?${newQuery}`, { replace: true });
+      n(`?${newQuery}`, { replace: true });
     }
   };
 
@@ -560,7 +571,7 @@ export default function SignUp() {
         </Button>
       </motion.header>
 
-      <FloatingIcons>
+      <FloatingIcons className="mt-[8rem] md:mt-[6rem]">
         <CurrentStep
           key={currentPage}
           onNext={handleNext}

@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Text } from "./text";
 import { Skeleton } from "./ui/skeleton";
 import { toast } from "@/hooks/use-toast";
+import { ZapIcon } from "lucide-react";
 
 interface SendEmailProps {
   isDesktop: boolean;
@@ -49,7 +50,7 @@ export function SendEmailButton({
           Send an email
         </Button>
       </TriggerComponent>
-      <ContentComponent>
+      <ContentComponent className="max-w-xl">
         <HeaderComponent>
           <TitleComponent>Send Email to Customer</TitleComponent>
         </HeaderComponent>
@@ -122,10 +123,10 @@ function SendEmailForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 md:p-0">
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="p-4 md:p-0 overflow-hidden">
+      <div className="space-y-4 overflow-hidden">
         {isLoading ? (
-          <div className="flex gap-3 overflow-auto">
+          <div className="flex gap-3">
             {[1, 2, 3, 4, 5].map((_, idx) => (
               <Skeleton key={idx} className="w-full h-[2.3rem]" />
             ))}
@@ -144,7 +145,9 @@ function SendEmailForm({
                   key={email.id}
                   size="sm"
                   variant="outline"
+                  className="rounded-none gap-2"
                 >
+                  <ZapIcon size={17} />
                   {email.label}
                 </Button>
               ))}

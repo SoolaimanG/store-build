@@ -13,97 +13,184 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { useStoreBuildState } from "@/store";
+import { IDeliveryIntegration, IOrder, IShippingMethods } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { cn, errorMessageAndStatus, storeBuilder } from "@/lib/utils";
+import { useToastError } from "@/hooks/use-toast-error";
+import { DatePicker } from "./date-picker";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
 
 interface CreatePickupFormProps {
   onSubmit: () => void;
+  order: IOrder;
 }
 
-export function CreatePickupForm({ onSubmit }: CreatePickupFormProps) {
-  const [__, setPickupAddress] = useState("");
-  const [_, setDeliveryAddress] = useState("");
+export function CreatePickupForm({ onSubmit, order }: CreatePickupFormProps) {
+  const { user } = useStoreBuildState();
+  const [customerState, setcustomerState] = useState(
+    order.customerDetails.shippingAddress.state || ""
+  );
+  const [customerCity, setCustomerCity] = useState(
+    order.customerDetails.shippingAddress.city || ""
+  );
+  const [shippingMethod, setShippingMethod] = useState(
+    order.shippingDetails.shippingMethod
+  );
+  const [pickUpType, setPickUpType] = useState("pickup");
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["integration"],
+    queryFn: () => storeBuilder.getIntegration("sendbox"),
+  });
+
+  const { data: integration } = data || {};
+
+  const { integration: sendBox } = integration || {};
+
+  const { settings } = sendBox as { settings: IDeliveryIntegration };
+
+  useToastError(error);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // const formData = new FormData(event.currentTarget);
-
-    // Process form data
-    // const pickupData = {
-    //   pickup_address: {
-    //     address: pickupAddress,
-    //     contact_name: formData.get("pickupName"),
-    //     contact_phone: formData.get("pickupPhone"),
-    //   },
-    //   delivery_address: {
-    //     address: deliveryAddress,
-    //     contact_name: formData.get("deliveryName"),
-    //     contact_phone: formData.get("deliveryPhone"),
-    //   },
-    //   type: formData.get("type"),
-    //   payment_method: formData.get("paymentMethod"),
-    //   is_express_delivery: isExpress,
-    //   pickup_timing: new Date(
-    //     formData.get("pickupTime") as string
-    //   ).toISOString(),
-    //   notes: formData.get("notes"),
-    // };
-
-    // console.log("Pickup data:", pickupData);
-    // TODO: Send data to API
+    try {
+      const res = await storeBuilder.createDeliveryPickup(
+        order._id!,
+        pickUpType,
+        date?.toISOString()
+      );
+      toast({
+        title: "SUCCESS",
+        description: res.message,
+      });
+    } catch (error) {
+      const { status: title, message: description } =
+        errorMessageAndStatus(error);
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+    }
 
     onSubmit();
   };
 
   return (
-    <div>
-      <div className="p-3">
+    <div className="h-full">
+      <div className="p-3 md:p-0">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <AddressAutocomplete
-            id="pickupAddress"
-            label="Pickup Address"
-            onAddressSelect={setPickupAddress}
-          />
-
-          <AddressAutocomplete
-            id="deliveryAddress"
-            label="Delivery Address"
-            onAddressSelect={setDeliveryAddress}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
-            <Input id="type" name="type" required />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <Select defaultValue="bank-trf">
-              <SelectTrigger className="w-full">
+          <div>
+            <Label>Customer State</Label>
+            <Select
+              disabled={isLoading}
+              value={customerState}
+              onValueChange={(e) => setcustomerState(e)}
+            >
+              <SelectTrigger className="w-full capitalize">
                 <SelectValue placeholder="Select a payment Method to use" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Payment method</SelectLabel>
-                  <SelectItem value="cash-on-delivery">
-                    Cash On Delivery
-                  </SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="bank-trf">Bank Transfer</SelectItem>
+                  <SelectLabel>Select State</SelectLabel>
+
+                  {settings.shippingRegions?.map((region) => (
+                    <SelectItem
+                      key={region}
+                      className="capitalize"
+                      value={region}
+                    >
+                      {region}
+                    </SelectItem>
+                  ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pickupTime">Pickup Time</Label>
+            <Label htmlFor="type">City</Label>
             <Input
-              id="pickupTime"
-              name="pickupTime"
-              type="datetime-local"
+              value={customerCity}
+              onChange={(e) => setCustomerCity(e.target.value)}
+              id="city"
+              name="city"
               required
             />
           </div>
 
-          <Button className="w-full" size="lg" type="submit">
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select
+              value={pickUpType}
+              onValueChange={(e) => setPickUpType(e)}
+              defaultValue="pickup"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Types</SelectLabel>
+                  <SelectItem value="pickup">Pick Up</SelectItem>
+                  <SelectItem value="dropoff">Drop Off</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Shipping Method</Label>
+            <Select
+              value={shippingMethod}
+              onValueChange={(e: IShippingMethods) => setShippingMethod(e)}
+              defaultValue="STANDARD"
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a shipping Method to use" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Shipping method</SelectLabel>
+                  <SelectItem value="STANDARD">STANDARD</SelectItem>
+                  <SelectItem value="EXPRESS">EXPRESS</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {pickUpType === "pickup" && (
+            <div className="space-y-2">
+              <Label htmlFor="pickupTime">Pickup Time</Label>
+              <DatePicker date={date!} setDate={setDate}>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal hover:bg-slate-800 border-slate-800",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? (
+                    format(date, "PPP")
+                  ) : (
+                    <span>Select date for order pick up or drop off</span>
+                  )}
+                </Button>
+              </DatePicker>
+            </div>
+          )}
+
+          <Button
+            disabled={!sendBox?.isConnected}
+            className="w-full"
+            size="lg"
+            type="submit"
+          >
             Create Pickup
           </Button>
         </form>

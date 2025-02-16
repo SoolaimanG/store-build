@@ -1,9 +1,10 @@
 import type React from "react";
-import { FC, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -16,7 +17,7 @@ import { ArrowLeft, Ellipsis, ShoppingBag, Trash2 } from "lucide-react";
 import Logo from "@/components/logo";
 import { Text } from "@/components/text";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ICartItem } from "@/types";
+import type { ICartItem, IProduct } from "@/types";
 import ProductCardWithQuantityIncrementation from "./product-card-with-quantity-incrementation";
 import { useToastError } from "@/hooks/use-toast-error";
 import {
@@ -28,6 +29,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
 import { menu } from "@/constants";
+import { BuyNowPreview } from "./store-buy-now-preview";
+
+export interface CartProduct extends IProduct, ICartItem {}
 
 interface CARTProps {
   children: React.ReactNode;
@@ -57,12 +61,13 @@ const CartItem: FC<{
 
   const removeItemFromCart = () => {
     const newCart = currentCart.filter(
-      (cart) =>
-        cart.productId !== productId ||
-        cart.color !== props.color ||
-        cart.size !== props.size
+      (item) =>
+        !(
+          item.productId === productId &&
+          item.color === props.color &&
+          item.size === props.size
+        )
     );
-
     setCart({ ...cart, [store?.storeCode!]: newCart });
   };
 
@@ -111,6 +116,34 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
     setStoreCart({ ...storeCart, [storeCode]: [] });
   };
 
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["products-with-id", currentCart.map((c) => c.productId)],
+    queryFn: () =>
+      storeBuilder.getProductsWithIds(currentCart.map((c) => c.productId)),
+  });
+
+  const { data: products = [] } = data || {};
+
+  const _products = currentCart
+    .map((cartItem) => {
+      const product = products.find((p) => p._id === cartItem.productId);
+
+      if (!product) return null;
+      return {
+        ...product,
+        quantity: cartItem.quantity,
+        color: cartItem.color,
+        size: cartItem.size,
+      };
+    })
+    .filter(Boolean) as CartProduct[];
+
+  const productsKey = JSON.stringify(
+    _products.map((p) => ({ id: p._id, quantity: p.quantity }))
+  );
+
+  useToastError(error);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -153,10 +186,10 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           </DropdownMenu>
         </SheetHeader>
         <div className="flex items-center justify-between mt-2">
-          <Logo />
+          <Logo name={currentStore?.storeName} />
           <Text className="">{currentCart.length} Items</Text>
         </div>
-        <ScrollArea className="h-[500px]">
+        <ScrollArea className="h-[530px]">
           {!!currentCart.length ? (
             currentCart.map((c, idx) => (
               <CartItem
@@ -185,6 +218,22 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           )}
         </ScrollArea>
         {/* Add cart content here */}
+        {!!currentCart.length && (
+          <SheetFooter>
+            <BuyNowPreview
+              key={productsKey}
+              disableQuantityIncrement
+              products={_products}
+            >
+              <Button
+                disabled={isLoading}
+                style={{ background: customizations?.theme.primary }}
+              >
+                CheckOut {currentCart.length} Items
+              </Button>
+            </BuyNowPreview>
+          </SheetFooter>
+        )}
       </SheetContent>
     </Sheet>
   );

@@ -15,6 +15,8 @@ import { useLocalStorage } from "@uidotdev/usehooks";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { menu } from "@/constants";
+import { Text } from "@/components/text";
+import QuantityIncrementation from "./quantity-incrementation";
 
 interface QuickProductViewProps {
   children: React.ReactNode;
@@ -40,6 +42,7 @@ export function QuickProductView({
   const [color, setColor] = React.useState(availableColors[0].name);
   const [isMobile, setIsMobile] = React.useState(false);
   const { currentStore: store } = useStoreBuildState();
+  const [quantity, setQuantity] = React.useState(1);
 
   const [cart, setCart] = useLocalStorage<Record<string, ICartItem[]>>(
     "storeCarts",
@@ -68,8 +71,8 @@ export function QuickProductView({
     const payload: ICartItem = {
       productId: _id!,
       color: color,
-      quantity: 1,
       size: size,
+      quantity,
     };
 
     if (!itemExisted) {
@@ -147,14 +150,17 @@ export function QuickProductView({
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              {p.averageRating || 0.0}
+              {p.averageRating?.toFixed(2)}
             </span>
             <Button
               style={{ color: currentStore?.customizations?.theme.primary }}
               variant="link"
               className="text-sm text-primary"
+              asChild
             >
-              See all {p.totalReviews || 0} reviews
+              <Link to={menu(store?.storeCode!)[2].path + _id + "?tab=reviews"}>
+                See all {p.totalReviews || 0} reviews
+              </Link>
             </Button>
           </div>
           <div className="grid gap-2">
@@ -183,6 +189,28 @@ export function QuickProductView({
                 </label>
               ))}
             </RadioGroup>
+          </div>
+          <div className="flex items-center gap-3">
+            <Text>Quantity</Text>
+            <QuantityIncrementation
+              product={{
+                ...p,
+                media,
+                productName,
+                price,
+                discount,
+                availableColors,
+                availableSizes,
+                _id,
+                quantity,
+              }}
+              onQuantityChange={(id, q) => {
+                if (_id === id) {
+                  setQuantity(q);
+                }
+              }}
+              quantity={quantity}
+            />
           </div>
           {!!availableSizes.length && (
             <div className="grid gap-2">

@@ -10,6 +10,7 @@ import { ShoppingBag } from "lucide-react";
 import { QuickProductView } from "./store-quick-view";
 import { Link } from "react-router-dom";
 import { menu } from "@/constants";
+import { BuyNowPreview } from "./store-buy-now-preview";
 
 const ProductCard: FC<
   IProduct & { className?: string; isGridDisplay?: boolean }
@@ -40,19 +41,33 @@ const ProductCard: FC<
           className="bg-black bg-opacity-40 absolute inset-0"
         />
         <div className="absolute flex flex-col top-1 right-1 -mt-4 -mr-4 p-6 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-          <Button
-            style={{ backgroundColor: customizations?.theme.primary }}
-            size="sm"
-            className="rounded-sm gap-2 group/2 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+          <BuyNowPreview
+            products={[
+              {
+                ...product,
+                media,
+                productName,
+                price,
+                discount,
+                description,
+                quantity: 1,
+              },
+            ]}
           >
-            <ShoppingBag
-              size={18}
-              className="transition-transform duration-300 group-hover/2:rotate-12"
-            />
-            <span className="overflow-hidden -mr-2 group-hover/2:-mr-0 transition-all duration-300 max-w-0 group-hover/2:max-w-xs">
-              Buy Now
-            </span>
-          </Button>
+            <Button
+              style={{ backgroundColor: customizations?.theme.primary }}
+              size="sm"
+              className="rounded-sm gap-2 group/2 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              <ShoppingBag
+                size={18}
+                className="transition-transform duration-300 group-hover/2:rotate-12"
+              />
+              <span className="overflow-hidden -mr-2 group-hover/2:-mr-0 transition-all duration-300 max-w-0 group-hover/2:max-w-xs">
+                Buy Now
+              </span>
+            </Button>
+          </BuyNowPreview>
         </div>
       </Card>
       <div className="flex flex-col space-y-2">

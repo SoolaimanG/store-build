@@ -32,10 +32,10 @@ const integrations = [
     connected: true,
   },
   {
-    id: "flutterwave",
-    name: "Flutterwave",
+    id: "paystack",
+    name: "PayStack",
     description:
-      "Work faster and smarter by integrating directly with Flutterwave, right in the app.",
+      "Work faster and smarter by integrating directly with PayStack, right in the app.",
     icon: CreditCard,
     connected: true,
   },
@@ -47,8 +47,8 @@ const integrations = [
     connected: true,
   },
   {
-    id: "kwik",
-    name: "Kwik Delivery",
+    id: "sendbox",
+    name: "SendBox Delivery",
     description: "Streamline your delivery operations with automated dispatch.",
     icon: Truck,
     connected: true,

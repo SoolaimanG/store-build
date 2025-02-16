@@ -20,7 +20,7 @@ export default function LandingPageNewsLetter() {
                 Nostrud amet eu ullamco nisi aute in ad minim nostrud
                 adipisicing velit quis. Duis tempor incididunt dolore.
               </p>
-              <div className="mt-6 flex max-w-md gap-x-4">
+              <div className="mt-6 flex max-w-md gap-x-2">
                 <label htmlFor="email-address" className="sr-only">
                   Email address
                 </label>
@@ -33,10 +33,15 @@ export default function LandingPageNewsLetter() {
                   required
                   placeholder="Enter your email"
                   autoComplete="email"
-                  className="text-white placeholder:text-white"
+                  className="text-white placeholder:text-white h-10 w-[100%]"
                 />
                 <NewsLetterButton email={email}>
-                  <Button type="submit" variant="gooeyRight">
+                  <Button
+                    size="sm"
+                    type="submit"
+                    variant="gooeyRight"
+                    className="h-10"
+                  >
                     Subscribe
                   </Button>
                 </NewsLetterButton>

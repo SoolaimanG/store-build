@@ -14,6 +14,7 @@ const SignIn = () => {
   const { setOpenOTPValidator } = useStoreBuildState();
   const { user } = useAuthentication();
   const n = useNavigate();
+
   const handleSignIn = async (data: Partial<ISignUp>) => {
     try {
       if (user?.email === data.email) {
@@ -32,18 +33,9 @@ const SignIn = () => {
         header: "Verify it's you!",
         otpFor: "login",
         onSuccess: () => {
-          if (!user?.isEmailVerified) {
-            setOpenOTPValidator({
-              open: true,
-              userEmail: data.email,
-              otpFor: "verify-email",
-              onSuccess: () => {
-                n(PATHS.DASHBOARD);
-              },
-            });
-            return;
-          } else if (user?.plan.type === "free") {
+          if (user?.plan.type === "free") {
             n(PATHS.SUBSCRIBE);
+            window.location.reload();
             return;
           } else {
             window.location.href = PATHS.DASHBOARD;

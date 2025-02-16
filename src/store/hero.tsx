@@ -16,6 +16,7 @@ import {
 import { menu } from "@/constants";
 import { ProductSearchDialog } from "@/components/product-search";
 import { CART } from "./store-cart";
+import { cn, isPathMatching } from "@/lib/utils";
 
 const MobileMenu: FC<{ children: ReactNode; isOpen?: boolean }> = ({
   children,
@@ -67,11 +68,15 @@ export const HeroSectionNavBar: FC<{ isLoading?: boolean }> = () => {
         </Link>
       )}
       <Section className="w-full flex items-center justify-between md:max-w-[90%] py-3">
-        <Logo name={storeName} />
+        <Logo path={`/store/${storeCode}/`} name={storeName} />
         <div className="hidden md:flex space-x-5">
           {menu(storeCode).map((m, idx) => (
             <Link
-              className="hover:text-gray-500 hover:font-semibold"
+              className={cn(
+                "hover:text-gray-500 hover:font-semibold",
+                isPathMatching(m.path, { level: 2, pageLevel: 1 }) &&
+                  "text-gray-500"
+              )}
               to={m.path}
               key={idx}
             >

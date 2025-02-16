@@ -3,9 +3,14 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { FC, ReactNode } from "react";
 
-const FloatingIcons: FC<{ children: ReactNode }> = ({ children }) => {
+const FloatingIcons: FC<{ children: ReactNode; className?: string }> = ({
+  children,
+  className,
+}) => {
   return (
-    <main className="max-w-md mx-auto mt-20 text-center relative">
+    <main
+      className={cn("max-w-md mx-auto mt-20 text-center relative", className)}
+    >
       {floatingIcons.map((icon, idx) => (
         <motion.div
           key={idx}

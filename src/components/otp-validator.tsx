@@ -57,10 +57,6 @@ const OtpValidator: FC = () => {
 
       setOpenOTPValidator({ ...openOTPValidator, open: false });
       openOTPValidator.onSuccess && openOTPValidator.onSuccess();
-      toast({
-        title: "Success",
-        description: "You can proceed with your next action.",
-      });
     } catch (error) {
       const _error = errorMessageAndStatus(error);
       toast({
@@ -224,7 +220,7 @@ const OtpValidator: FC = () => {
                 type="submit"
                 variant="ringHover"
                 className="h-[3rem]"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !Boolean(form.watch("pin"))}
               >
                 {isSubmitting ? "Verifying..." : "Verify"}
               </Button>

@@ -28,7 +28,7 @@ import {
   IPaymentIntegration,
 } from "@/types";
 import { Text } from "./text";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 
 import {
   Drawer,
@@ -63,6 +63,7 @@ import ConnectAppBtn from "./connect-app-btn";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStoreBuildState } from "@/store";
 import { useToastError } from "@/hooks/use-toast-error";
+import { ManageStoreAddress } from "./manage-store-address";
 
 export function ManageIntegration({
   integration,
@@ -161,7 +162,7 @@ export function ManageIntegration({
       );
     }
 
-    if (integration.id === "kwik") {
+    if (integration.id === "sendbox") {
       const settings = // @ts-ignore
         _integration?.integration?.settings as IDeliveryIntegration;
 
@@ -208,7 +209,7 @@ export function ManageIntegration({
     }));
   };
 
-  const manageKwikDelivery = async () => {
+  const manageSendBoxintegration = async () => {
     try {
       startTransition(true);
 
@@ -554,13 +555,23 @@ export function ManageIntegration({
           </div>
         );
 
-      case "kwik":
+      case "sendbox":
         return (
           <div className="space-y-5">
-            <header>
-              <h2 className="text-2xl font-semibold">Delivery Settings</h2>
-              <Text>Configure your delivery locations and preferences</Text>
+            <header className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold">Delivery Settings</h2>
+                <Text>Configure your delivery locations and preferences</Text>
+              </div>
+              <ManageStoreAddress>
+                <Button variant="link" className="gap-2">
+                  <Plus size={18} /> Manage Address
+                </Button>
+              </ManageStoreAddress>
             </header>
+            <div>
+              <header></header>
+            </div>
             <div className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
                 <div className="flex flex-col space-y-1">
@@ -657,7 +668,7 @@ export function ManageIntegration({
               {integration.connected && (
                 <Button
                   disabled={isPending}
-                  onClick={manageKwikDelivery}
+                  onClick={manageSendBoxintegration}
                   className="w-full"
                 >
                   Update Delivery Settings

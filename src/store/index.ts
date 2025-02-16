@@ -1,4 +1,4 @@
-import { IUser, IUseStoreBuildTypes } from "@/types";
+import { IProduct, IUser, IUseStoreBuildTypes } from "@/types";
 import { create } from "zustand";
 
 export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
@@ -8,10 +8,18 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
   openAddPaymentDetailsModal: false,
   selectedProducts: [],
   currentStore: undefined,
+  openOTPValidator: {
+    open: false,
+    otpFor: "login",
+  },
+  //Setters
   onProductSelect(products) {
     set((state) => ({
       ...state,
-      selectedProducts: products,
+      selectedProducts: products.map((p) => ({
+        ...p,
+        quantity: 1,
+      })),
     }));
   },
   setIsPaymentDetailsConfirmed: () => {
@@ -23,17 +31,12 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
         state.user.paymentDetails?.bankName, // Update the state here
     }));
   },
-  openOTPValidator: {
-    open: false,
-    otpFor: "login",
-  },
   setOpenAddPaymentDetailsModal(openAddPaymentDetailsModal) {
     set((state) => ({
       ...state,
       openAddPaymentDetailsModal,
     }));
   },
-  //Setters
   setOpenOTPValidator: (openOTPValidator) => {
     set((state) => ({
       ...state,
@@ -58,6 +61,28 @@ export const useStoreBuildState = create<IUseStoreBuildTypes>((set) => ({
     set((state) => ({
       ...state,
       currentStore,
+    }));
+  },
+  setOrderPlaced(order) {
+    set((state) => ({
+      ...state,
+      orderPlaced: order,
+    }));
+  },
+  adjustProductQuantity(id, type) {
+    set((state) => ({
+      ...state,
+      selectedProducts: state.selectedProducts.map((p) =>
+        p._id === id
+          ? {
+              ...p,
+              quantity:
+                (type === "dec"
+                  ? Math.max(1, p.quantity - 1)
+                  : Math.min(p.maxStock, p.quantity + 1)) || 1,
+            }
+          : { ...p }
+      ),
     }));
   },
 }));
