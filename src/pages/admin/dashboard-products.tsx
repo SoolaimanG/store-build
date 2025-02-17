@@ -205,7 +205,7 @@ export default function ProductsPage() {
       <FilterDialog />
 
       <motion.div variants={fadeInUp}>
-        <Card>
+        <Card className="p-1 md:p-2">
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4">
               <motion.div
