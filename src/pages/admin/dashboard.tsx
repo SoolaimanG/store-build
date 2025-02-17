@@ -489,7 +489,7 @@ export function RecentOrder({ className }: { className?: string }) {
             header="No recent orders"
             message="When you receive new orders, they will appear here."
           >
-            <Button asChild variant="ringHover" size="sm">
+            <Button asChild variant="ringHover" size="lg">
               <Link
                 to={
                   PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"

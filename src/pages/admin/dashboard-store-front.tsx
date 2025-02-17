@@ -15,7 +15,6 @@ import {
   Loader2,
   PackageOpen,
   Plus,
-  RocketIcon,
   Sparkles,
   Star,
   Trash2,
@@ -65,6 +64,7 @@ import {
   IStoreFeatures,
   IStoreHeroSection,
   IStoreTheme,
+  PATHS,
 } from "@/types";
 import { Text } from "@/components/text";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -1574,7 +1574,7 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
   const page = tabs[currentTab];
 
   return (
-    <Card className="overflow-hidden md:p-6 w-full">
+    <Card className="overflow-hidden md:p-3 p-1 w-full">
       <CardHeader className="p-0 relative overflow-x-auto w-full">
         <div ref={tabsRef} className="flex items-center gap-3 p-2">
           {tabs.map((tab, idx) => (
@@ -1625,13 +1625,19 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
 }
 
 const DashboardStoreFront = () => {
+  const n = useNavigate();
+  const { storeCode = "" } = useStoreBuildState()?.currentStore || {};
   return (
     <div className="w-full container mx-auto p-3 space-y-4">
       <header className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Store Front Customization</h2>
-        <Button size="sm" variant="shine" className="gap-2">
-          <RocketIcon size={19} />
-          Publish
+        <Button
+          onClick={() => n(PATHS.STORE + storeCode)}
+          size="sm"
+          variant="outline"
+          className="rounded-full"
+        >
+          Preview
         </Button>
       </header>
       <div className="md:flex md:flex-row w-full gap-5">

@@ -1,12 +1,10 @@
-import { Menu, Sparkles } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Logo } from "./logo";
 import { Section } from "./section";
 import { Button } from "./ui/button";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { useStoreBuildState } from "@/store";
 import { cn, formatAmountToNaira, isPathMatching } from "@/lib/utils";
-import { PATHS } from "@/types";
-import { AIChat } from "./ai-chat";
 import { Link } from "react-router-dom";
 import {
   Sheet,
@@ -37,15 +35,7 @@ const DashBoardNavBar = () => {
       <Logo path={location.href} />
       <div className="flex items-center md:gap-3 gap-2">
         {balanceUI}
-        <AIChat>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full text-primary hover:text-primary"
-          >
-            <Sparkles size={18} />
-          </Button>
-        </AIChat>
+
         {!isDesktop && (
           <MobileNavBar>
             <Button
@@ -56,11 +46,6 @@ const DashBoardNavBar = () => {
               <Menu />
             </Button>
           </MobileNavBar>
-        )}
-        {isPathMatching(PATHS.STORE_FRONT) && (
-          <Button asChild size="sm" variant="outline" className="rounded-sm">
-            <Link to={PATHS.STORE + user?.storeCode}>Preview</Link>
-          </Button>
         )}
       </div>
     </Section>
