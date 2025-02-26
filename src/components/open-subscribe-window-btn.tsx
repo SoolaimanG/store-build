@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { useAuthentication } from "@/hooks/use-authentication";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/types";
+import queryString from "query-string";
 
 const OpenSubscribeWindowBtn: FC<{
   className?: string;
@@ -13,10 +14,14 @@ const OpenSubscribeWindowBtn: FC<{
   const n = useNavigate();
 
   const onClick = () => {
-    const currentPath = location.href;
+    const currentPath = location.href + "#subscribe";
+
+    const q = queryString.stringify({
+      redirectTo: currentPath,
+    });
 
     if (!isAuthenticated) {
-      n(`${PATHS.SIGNIN}?callbackUrl=${currentPath}`);
+      n(`${PATHS.SIGNIN}?${q}`);
       return;
     }
 

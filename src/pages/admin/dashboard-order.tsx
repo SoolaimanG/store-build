@@ -249,7 +249,7 @@ export default function DashboardOrders() {
         transition={{ duration: 0.3, delay: 0.1 }}
       >
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input

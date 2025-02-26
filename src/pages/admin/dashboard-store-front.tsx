@@ -114,7 +114,7 @@ const StoreFrontSettings: FC<{ store: Partial<IStore> }> = ({ store }) => {
     store.customizations?.theme
   );
   const [settings, setSettings] = useState<Partial<IStore>>({
-    isActive: store.isActive,
+    isActive: store.isActive || false,
     storeName: store.storeName,
     aboutStore: store.aboutStore,
     description: store.description,
@@ -417,8 +417,12 @@ const StoreFrontProductsPage: FC<{ store: Partial<IStore> }> = ({ store }) => {
   return (
     <div className="w-full space-y-5">
       <header>
-        <h2 className="text-xl font-semibold">Product Page Customizations</h2>
-        <Text>Tailor your product page to perfection</Text>
+        <h2 className="md:text-xl text-lg font-semibold">
+          Product Page Customizations
+        </h2>
+        <Text className="tracking-tight">
+          Tailor your product page to perfection
+        </Text>
       </header>
       <div className="space-y-6">
         <div>
@@ -569,10 +573,12 @@ const StoreFrontProductPage: FC<{ store: Partial<IStore> }> = ({ store }) => {
   return (
     <div className="w-full space-y-5">
       <header>
-        <h2 className="text-2xl font-semibold">
+        <h2 className="md:text-2xl text-lg font-semibold">
           Product Page Style Customizer
         </h2>
-        <Text>Customize the layout and features of your product pages</Text>
+        <Text className="tracking-tight">
+          Customize the layout and features of your product pages
+        </Text>
       </header>
       <div className="space-y-6">
         <div className="space-y-4">
@@ -929,7 +935,9 @@ const StoreFrontFeaturesSectionManager: FC<{ store: Partial<IStore> }> = ({
     <div className="space-y-5 w-full">
       <div className="space-y-5 w-full">
         <header>
-          <h2 className="text-2xl font-semibold">Features Section Manager</h2>
+          <h2 className="md:text-2xl text-lg font-semibold">
+            Features Section Manager
+          </h2>
           <Text>Manage the features section of your store</Text>
         </header>
         <div className="space-y-4 w-full">
@@ -1218,15 +1226,16 @@ const StoreFrontHeroSection: FC<{ store: Partial<IStore> }> = ({ store }) => {
         <Text>Customize your store's hero section</Text>
       </header>
 
-      <Card>
-        <CardHeader>
+      <div>
+        <header>
           <h3 className="text-lg font-semibold">Hero Content</h3>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </header>
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="product">Featured Product</Label>
             <div className="flex items-center gap-2">
               <Input
+                className="w-[70%]"
                 id="product"
                 value={heroSection.product}
                 readOnly
@@ -1244,7 +1253,7 @@ const StoreFrontHeroSection: FC<{ store: Partial<IStore> }> = ({ store }) => {
                 <Button
                   size="sm"
                   variant="gooeyLeft"
-                  className="w-1/3 text-[12px] md:text-sm"
+                  className="w-[30%] text-[12px] md:text-sm"
                 >
                   Select Product
                 </Button>
@@ -1344,8 +1353,8 @@ const StoreFrontHeroSection: FC<{ store: Partial<IStore> }> = ({ store }) => {
               </div>
             </div>
           </div>
-        </CardContent>
-        <CardFooter>
+        </div>
+        <div className="mt-5">
           <SaveChanges
             updates={{
               // @ts-ignore
@@ -1361,8 +1370,8 @@ const StoreFrontHeroSection: FC<{ store: Partial<IStore> }> = ({ store }) => {
           >
             Save Hero Section
           </SaveChanges>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1387,8 +1396,8 @@ const FooterManager: FC<{ store: Partial<IStore> }> = ({ store }) => {
     <div className="space-y-5">
       <div className="space-y-5">
         <header>
-          <h2 className="text-2xl font-semibold">Footer Manager</h2>
-          <p className="text-muted-foreground">Customize your store's footer</p>
+          <h2 className="md:text-2xl text-lg font-semibold">Footer Manager</h2>
+          <Text className="tracking-tight">Customize your store's footer</Text>
         </header>
         <div>
           {!footer ? (
@@ -1600,7 +1609,7 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
       </CardHeader>{" "}
       <CardContent
         className={cn(
-          "mt-4",
+          "mt-4 p-2",
           isLoading && "flex items-center justify-center mt-10 text-slate-800"
         )}
       >
@@ -1627,12 +1636,43 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
 const DashboardStoreFront = () => {
   const n = useNavigate();
   const { storeCode = "" } = useStoreBuildState()?.currentStore || {};
+  const [isPending, startTransition] = useState(false);
+
+  const previewStore = async () => {
+    try {
+      startTransition(true);
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 30);
+
+      const res = await storeBuilder.editStore({
+        previewFor: now.toISOString(),
+      });
+
+      n(PATHS.STORE + `${storeCode}`);
+
+      toast({
+        title: "SUCCESS",
+        description: res.message,
+      });
+    } catch (error) {
+      const { message: description } = errorMessageAndStatus(error);
+      toast({
+        title: "Error",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      startTransition(false);
+    }
+  };
+
   return (
     <div className="w-full container mx-auto p-3 space-y-4">
       <header className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Store Front Customization</h2>
+        <h2 className="text-4xl">Customization</h2>
         <Button
-          onClick={() => n(PATHS.STORE + storeCode)}
+          disabled={isPending}
+          onClick={previewStore}
           size="sm"
           variant="outline"
           className="rounded-full"

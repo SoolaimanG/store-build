@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { LucideProps } from "lucide-react";
 import { FC, ReactNode } from "react";
 
@@ -5,6 +6,7 @@ export const EmptyProductState: FC<{
   message?: string;
   header?: string;
   children?: ReactNode;
+  className?: string;
   icon?: React.ForwardRefExoticComponent<
     Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
   >;
@@ -15,7 +17,12 @@ export const EmptyProductState: FC<{
   ...rest
 }) => {
   return (
-    <div className="flex h-[23rem] space-y-3 flex-col items-center justify-center p-8 text-center rounded-lg">
+    <div
+      className={cn(
+        "flex h-[23rem] space-y-3 flex-col items-center justify-center p-8 text-center rounded-lg",
+        rest.className
+      )}
+    >
       <div className="bg-muted/30 p-4 rounded-full">
         {rest.icon && <rest.icon className="h-12 w-12 text-muted-foreground" />}
       </div>

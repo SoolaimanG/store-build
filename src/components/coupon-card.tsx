@@ -51,7 +51,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
 
   return (
     <div>
-      <Card key={coupon._id} className="overflow-hidden shadow-lg">
+      <Card key={coupon._id} className="overflow-hidden shadow-lg rounded-none">
         {/* Header with Coupon Code and Type */}
         <div className="p-3 bg-slate-900">
           <div className="flex justify-between items-start">
@@ -65,7 +65,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
                   : "Product Discount"}
               </span>
             </div>
-            <Badge className="text-[13px] font-light rounded-md">
+            <Badge className="text-[13px] font-bold rounded-md">
               {coupon.type === "percentageCoupon"
                 ? `${coupon.discountValue}% OFF`
                 : `₦${coupon.discountValue} OFF`}
@@ -73,7 +73,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
           </div>
         </div>
 
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-4 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             {/* Expiration Date */}
             <div className="flex items-center text-sm">
@@ -122,7 +122,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
               ) : (
                 <Badge
                   variant="destructive"
-                  className="flex items-center gap-1 px-3 py-1"
+                  className="flex items-center gap-1 px-3 py-1 rounded-md"
                 >
                   <XCircleIcon className="w-4 h-4" />
                   Expired
@@ -162,7 +162,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
             >
               <Button
                 size="sm"
-                className="gap-1 bg-gray-800 hover:bg-gray-700 text-white"
+                className="gap-1 bg-gray-800 hover:bg-gray-700 text-white rounded-none"
               >
                 <PencilIcon size={16} /> Edit
               </Button>
@@ -171,7 +171,7 @@ const CouponCard: FC<ICoupon> = (coupon) => {
               <Button
                 variant="destructive"
                 size="sm"
-                className="gap-1 text-gray-700 border-gray-300 dark:text-gray-300"
+                className="gap-1 text-gray-700 border-gray-300 dark:text-gray-300 rounded-none"
               >
                 <TrashIcon className="h-4 w-4" /> Delete
               </Button>

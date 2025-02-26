@@ -51,16 +51,6 @@ export function QuickProductView({
 
   const currentCart = cart[store?.storeCode!] || [];
 
-  const removeItemFromCart = () => {
-    setCart({
-      ...cart,
-      [store?.storeCode!]: currentCart.filter(
-        (cart) =>
-          cart.productId !== _id || cart.color !== color || cart.size !== size
-      ),
-    });
-  };
-
   const addItemToCart = () => {
     // Check if item of the same color and size exist
     const itemExisted = currentCart.find(
@@ -77,21 +67,9 @@ export function QuickProductView({
 
     if (!itemExisted) {
       setCart({ ...cart, [store?.storeCode!]: [...currentCart, payload] });
-      const t = toast({
+      toast({
         title: "ITEM ADDED",
         description: `${productName} has been added to your cart`,
-        action: (
-          <Button
-            onClick={() => {
-              removeItemFromCart();
-              t.dismiss();
-            }}
-            size="sm"
-            variant="secondary"
-          >
-            Undo
-          </Button>
-        ),
       });
     } else {
       // Increment the quantity by one
@@ -123,7 +101,7 @@ export function QuickProductView({
           <Img
             src={media[0]?.url}
             alt={media[0]?.altText || productName}
-            className="object-cover w-full h-[20rem] md:h-full rounded-md md:rounded-none"
+            className="object-cover w-full h-[16rem] md:h-full rounded-md md:rounded-none"
           />
         </div>
         <div className="grid gap-4">
@@ -272,7 +250,7 @@ export function QuickProductView({
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{children}</DrawerTrigger>
         <DrawerContent>
-          <ScrollArea className="h-[650px]">
+          <ScrollArea className="h-[630px]">
             <Content />
           </ScrollArea>
         </DrawerContent>

@@ -20,15 +20,18 @@ import { Input } from "@/components/ui/input";
 import {
   cn,
   formatAmountToNaira,
+  generateRandomString,
   getInitials,
   storeBuilder,
 } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { PackageSearch, PlusIcon, Search } from "lucide-react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { useQuery } from "@tanstack/react-query";
 import { useStoreBuildState } from "@/store";
-import { IProduct } from "@/types";
+import { IProduct, PATHS } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { EmptyProductState } from "./empty";
+import { Link } from "react-router-dom";
 
 interface ProductSelectorProps {
   onSelect: (selectedProducts: IProduct[]) => void;
@@ -95,36 +98,54 @@ export function ProductSelector({
         </div>
       </div>
       <ScrollArea className={cn(!isDesktop && "flex-grow h-[450px]")}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-          {filteredProducts?.map((product) => (
-            <Button
-              key={product._id}
-              variant="outline"
-              className={cn(
-                "h-auto flex flex-col items-start p-4 space-y-2 transition-all",
-                selectedProducts.some((p) => p._id === product._id) &&
-                  "border-primary bg-primary/30"
-              )}
-              onClick={() => handleProductClick(product)}
-            >
-              <div className="relative w-full mb-2">
-                <Avatar className="rounded-md aspect-square w-full h-[17rem]">
-                  <AvatarImage
-                    src={product.media[0].url}
-                    alt={product.productName}
-                    className="w-full h-full rounded-md object-cover"
-                  />
-                  <AvatarFallback className="rounded-md">
-                    {getInitials(product.productName)}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <span className="font-semibold">{product.productName}</span>
-              <span className="text-sm text-muted-foreground">
-                {formatAmountToNaira(product.price.default)}
-              </span>
-            </Button>
-          ))}
+        <div
+          className={cn(
+            "grid grid-cols-1 md:grid-cols-2 gap-4 p-4",
+            !filteredProducts?.length && "flex items-center justify-center"
+          )}
+        >
+          {!filteredProducts?.length ? (
+            <EmptyProductState icon={PackageSearch}>
+              <Button variant="ringHover" className="rounded-none" asChild>
+                <Link
+                  to={PATHS.STORE_PRODUCTS + generateRandomString(13) + "#new"}
+                  className=""
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" /> Create Product
+                </Link>
+              </Button>
+            </EmptyProductState>
+          ) : (
+            filteredProducts?.map((product) => (
+              <Button
+                key={product._id}
+                variant="outline"
+                className={cn(
+                  "h-auto flex flex-col items-start p-4 space-y-2 transition-all",
+                  selectedProducts.some((p) => p._id === product._id) &&
+                    "border-primary bg-primary/30"
+                )}
+                onClick={() => handleProductClick(product)}
+              >
+                <div className="relative w-full mb-2">
+                  <Avatar className="rounded-md aspect-square w-full h-[17rem]">
+                    <AvatarImage
+                      src={product.media[0].url}
+                      alt={product.productName}
+                      className="w-full h-full rounded-md object-cover"
+                    />
+                    <AvatarFallback className="rounded-md">
+                      {getInitials(product.productName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <span className="font-semibold">{product.productName}</span>
+                <span className="text-sm text-muted-foreground">
+                  {formatAmountToNaira(product.price.default)}
+                </span>
+              </Button>
+            ))
+          )}
         </div>
       </ScrollArea>
       {!isDesktop && (

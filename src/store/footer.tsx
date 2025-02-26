@@ -10,7 +10,7 @@ export default function StoreFooter() {
   return (
     <footer className="dark:bg-white bg-slate-900 text-white dark:text-slate-900 py-16 flex flex-col items-center gap-12">
       {/* Navigation Links */}
-      <nav className="flex gap-8">
+      <nav className="flex gap-8 flex-wrap items-center justify-center">
         {menu(currentStore?.storeCode!).map((m, idx) => (
           <Link
             key={idx}

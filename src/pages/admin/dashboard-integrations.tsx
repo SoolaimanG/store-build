@@ -21,6 +21,8 @@ import { useQuery } from "@tanstack/react-query";
 import { storeBuilder } from "@/lib/utils";
 import { useToastError } from "@/hooks/use-toast-error";
 import ConnectAppBtn from "@/components/connect-app-btn";
+import { Link } from "react-router-dom";
+import { PATHS } from "@/types";
 
 const integrations = [
   {
@@ -110,8 +112,8 @@ export default function DashboardIntegrations() {
           </p>
           <div className="flex items-center justify-center gap-4 pt-4">
             <Button size="lg">Read More</Button>
-            <Button size="lg" variant="outline">
-              Contact Us
+            <Button asChild size="lg" variant="outline">
+              <Link to={PATHS.CONTACT_US}>Contact Us</Link>
             </Button>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useStoreBuildState } from "@/store";
 import { useAuthentication } from "@/hooks/use-authentication";
+import queryString from "query-string";
 
 const SignIn = () => {
   const { setOpenOTPValidator } = useStoreBuildState();
@@ -27,6 +28,10 @@ const SignIn = () => {
 
       await storeBuilder.sendOTP("login", data.email!);
 
+      const { redirectTo } = queryString.parse(location.search) as {
+        redirectTo?: string;
+      };
+
       setOpenOTPValidator({
         open: true,
         userEmail: data.email,
@@ -38,15 +43,16 @@ const SignIn = () => {
             window.location.reload();
             return;
           } else {
-            window.location.href = PATHS.DASHBOARD;
+            window.location.href = redirectTo || PATHS.DASHBOARD;
           }
         },
       });
     } catch (error) {
+      console.log(error);
       const _error = errorMessageAndStatus(error);
       toast({
-        title: _error.status,
-        description: _error.message,
+        title: _error.status || "ERROR",
+        description: _error.message || "Something went wrong",
         variant: "destructive",
       });
     }

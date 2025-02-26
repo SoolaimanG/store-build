@@ -1,4 +1,4 @@
-import { FC, ReactNode, useState } from "react";
+import { FC, ReactNode, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  CalendarIcon,
+  FileJson,
+  FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -48,7 +52,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import {
+  cn,
   copyToClipboard,
+  errorMessageAndStatus,
   formatAmountToNaira,
   getInitials,
   storeBuilder,
@@ -60,6 +66,42 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerFilters } from "@/components/customer-filters";
 import { EmptyProductState } from "@/components/empty";
+import { toast } from "@/hooks/use-toast";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useStoreBuildState } from "@/store";
 
 interface CustomerTableProps {
   selectedCustomers: string[];
@@ -69,6 +111,266 @@ interface CustomerTableProps {
 }
 
 const PAGE_SIZE = 10;
+
+const formSchema = z.object({
+  format: z.enum(["json", "excel"]),
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
+});
+
+const ExportDataWindow: FC<{ children: ReactNode }> = ({ children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const { user } = useStoreBuildState();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      format: "json",
+      dateRange: {
+        from: new Date(),
+        to: new Date(),
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (user) {
+      form.setValue("dateRange.from", new Date(user.createdAt!));
+    }
+  }, [user]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+
+    try {
+      const res = await storeBuilder.exportCustomersData(values.format, {
+        from: values.dateRange.from.toISOString(),
+        to: values.dateRange.to.toISOString(),
+      });
+
+      const blob = new Blob([res.data], {
+        type:
+          values.format === "excel"
+            ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            : "application/json",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `customers.${
+        values.format === "excel" ? "xlsx" : "json"
+      }`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      // Close the modal or take further actions
+      setIsOpen(false);
+    } catch (error) {
+      const { message: description } = errorMessageAndStatus(error);
+      toast({
+        title: "ERROR",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const content = (
+    <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="dateRange"
+        render={({ field }) => (
+          <FormItem className="flex flex-col">
+            <FormLabel>Date Range</FormLabel>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="secondary"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value.from && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value.from ? (
+                        format(field?.value.from, "PPP")
+                      ) : (
+                        <span>Start date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value.from}
+                    onSelect={(date) =>
+                      field.onChange({ ...field.value, from: date })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="secondary"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value.to && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value.to ? (
+                        format(field.value.to, "PPP")
+                      ) : (
+                        <span>End date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value.to}
+                    onSelect={(date) =>
+                      field.onChange({ ...field.value, to: date })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="format"
+        render={({ field }) => (
+          <FormItem className="space-y-3">
+            <FormLabel>Export Format</FormLabel>
+            <FormControl>
+              <RadioGroup
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                className="grid grid-cols-2 gap-4"
+              >
+                <FormItem>
+                  <FormControl>
+                    <RadioGroupItem
+                      value="json"
+                      className="peer sr-only"
+                      id="json"
+                    />
+                  </FormControl>
+                  <Label
+                    htmlFor="json"
+                    className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-[7.5rem]"
+                  >
+                    <FileJson className="mb-3 h-6 w-6" />
+                    <div className="space-y-1 text-center">
+                      <p className="text-sm font-medium leading-none">
+                        JSON Export
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Raw data format
+                      </p>
+                    </div>
+                  </Label>
+                </FormItem>
+                <FormItem>
+                  <FormControl>
+                    <RadioGroupItem
+                      value="excel"
+                      className="peer sr-only"
+                      id="excel"
+                    />
+                  </FormControl>
+                  <Label
+                    htmlFor="excel"
+                    className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-[7.5rem]"
+                  >
+                    <FileSpreadsheet className="mb-3 h-6 w-6" />
+                    <div className="space-y-1 text-center">
+                      <p className="text-sm font-medium leading-none">
+                        Excel Export
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Spreadsheet format
+                      </p>
+                    </div>
+                  </Label>
+                </FormItem>
+              </RadioGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Exporting...
+          </>
+        ) : (
+          <>
+            <Download className="mr-2 h-4 w-4" />
+            Export Data
+          </>
+        )}
+      </Button>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>{children}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Export Data</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>{content}</form>
+            </Form>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Export Data</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>{content}</form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const DashboardCustomers = () => {
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
@@ -86,8 +388,6 @@ const DashboardCustomers = () => {
         sortCustomer
       ),
   });
-
-  console.log({ isLoading, data });
 
   const { data: __data } = data || {};
 
@@ -117,12 +417,14 @@ const DashboardCustomers = () => {
         transition={{ delay: 0.1 }}
         className="flex items-center justify-between"
       >
-        <h1 className="text-3xl font-semibold tracking-tight">Customers</h1>
+        <h1 className="text-4xl tracking-tight">Customers</h1>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="rounded-md">
-            <Download className="w-4 h-4 mr-2" />
-            Export Customers
-          </Button>
+          <ExportDataWindow>
+            <Button variant="outline" size="sm" className="rounded-md">
+              <Download className="w-4 h-4 mr-2" />
+              Export Customers
+            </Button>
+          </ExportDataWindow>
         </div>
       </motion.div>
 

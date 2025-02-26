@@ -15,7 +15,7 @@ import queryString from "query-string";
 import { Text } from "./text";
 
 const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const { isLoading, isAuthenticated } = useAuthentication();
+  const { isLoading, code } = useAuthentication();
   const { setTheme } = useTheme();
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width:767px)");
@@ -33,7 +33,7 @@ const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (code === 4400) {
     const redirectTo = location.pathname + location.search;
     const q = queryString.stringify({
       redirectTo,
@@ -51,7 +51,7 @@ const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
           <Button
             variant="shine"
             size="icon"
-            className="rounded-full text-white fixed bottom-6 right-4 z-40"
+            className="rounded-full text-white fixed bottom-6 right-4 z-40 w-12 h-12"
           >
             <Sparkles size={18} />
           </Button>

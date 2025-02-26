@@ -161,10 +161,10 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           )}
         </div>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="w-[90%]">
         <SheetHeader className="flex-row items-center justify-between">
           <SheetTrigger>
-            <Button size={"icon"} variant="ghost">
+            <Button className="rounded-full" size={"icon"} variant="ghost">
               <ArrowLeft size={18} />
             </Button>
           </SheetTrigger>
@@ -186,7 +186,7 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           </DropdownMenu>
         </SheetHeader>
         <div className="flex items-center justify-between mt-2">
-          <Logo name={currentStore?.storeName} />
+          <Logo path={location.href} name={currentStore?.storeName} />
           <Text className="">{currentCart.length} Items</Text>
         </div>
         <ScrollArea className="h-[530px]">

@@ -91,13 +91,13 @@ export default function DashboardCoupon() {
   return (
     <div className="container mx-auto p-3 space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Active Coupons</h2>
+        <h2 className="text-4xl">Active Coupons</h2>
         <CouponCreator>
           <Button
             variant={"ringHover"}
             size="sm"
             onClick={() => {}}
-            className=""
+            className="rounded-none"
           >
             <PlusIcon className="mr-2 h-4 w-4" /> New Coupon
           </Button>

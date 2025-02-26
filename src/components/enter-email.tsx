@@ -89,8 +89,8 @@ export const EnterEmail: FC<
           transition={{ delay: 0.8 }}
         >
           <Text className="text-xs text-gray-500 mt-4">
-            By checking this box, I acknowledge and agree to the terms of use on
-            behalf of the Company specified above
+            By signing up, I acknowledge and agree to the terms of use on behalf
+            of the Company specified above
           </Text>
         </motion.div>
       )}

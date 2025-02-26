@@ -148,7 +148,7 @@ export const LandingPageNavBar: FC = () => {
           {isAuthenticated ? (
             <Link to={PATHS.DASHBOARD}>Dashboard</Link>
           ) : (
-            <Link to={PATHS.SIGNUP}>Let's do it</Link>
+            <Link to={PATHS.SIGNUP}>Create Account</Link>
           )}
         </Button>
         <AnimatePresence>

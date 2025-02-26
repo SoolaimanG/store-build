@@ -46,6 +46,8 @@ import MetricLoading from "@/components/loaders/metric-loading";
 import { format } from "date-fns";
 import { EmptyProductState } from "@/components/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ProfileCompletionCarousel } from "@/components/complete-profile-carousel";
+// import { CompleteProfileCard } from "@/components/complete-profile-carousel";
 
 const timeRanges = [
   { value: "all", label: "All-time" },
@@ -128,7 +130,12 @@ export default function Dashboard() {
           transition={{ delay: 0.4 }}
           className="w-full sm:w-auto"
         >
-          <Button asChild size="sm" className="w-full sm:w-auto">
+          <Button
+            variant={"ringHover"}
+            asChild
+            size="sm"
+            className="w-full sm:w-auto"
+          >
             <Link
               className="text-sm"
               to={PATHS.STORE_PRODUCTS + `${generateRandomString(24)}#new`}
@@ -139,6 +146,8 @@ export default function Dashboard() {
           </Button>
         </motion.div>
       </div>
+
+      <ProfileCompletionCarousel />
 
       <motion.div
         initial={{ y: 20, opacity: 0 }}

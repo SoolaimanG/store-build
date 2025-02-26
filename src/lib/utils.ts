@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import {
+  aiChatResponse,
   apiResponse,
   chargeResponse,
   Customer,
@@ -30,6 +31,7 @@ import {
   IRating,
   IStore,
   IStoreTheme,
+  ITutorial,
   IUser,
   ShipmentResponse,
 } from "@/types";
@@ -45,6 +47,7 @@ export function cn(...inputs: ClassValue[]) {
 export const appConfig = {
   name: "Store Build",
   premiumAmount: 600,
+  referralPrice: 100,
 };
 
 export const api = axios.create({
@@ -55,8 +58,9 @@ export const errorMessageAndStatus = (error: any) => {
   const message = error?.response?.data?.message;
   const status = error?.response?.data?.status?.toUpperCase();
   const data = error?.response?.data?.data;
+  const code = error?.response?.data?.code;
 
-  return { message, status, data };
+  return { message, status, data, code };
 };
 
 export class StoreBuild {
@@ -727,6 +731,138 @@ export class StoreBuild {
       });
     return res.data;
   }
+
+  async updateUser(payload: {
+    email?: string;
+    phoneNumber?: string;
+    fullName?: string;
+  }) {
+    const res: { data: apiResponse<IUser> } = await api.patch(
+      `/update-user/`,
+      payload,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getReferrals() {
+    const res: {
+      data: apiResponse<{
+        totalReferrals: number;
+        totalEarnings: number;
+        referrals: {
+          fullName: string;
+          joinedAt: string;
+          signUpComplete: boolean;
+          totalOrders: number;
+        }[];
+      }>;
+    } = await api.get(`/get-referrals/`, {
+      headers: {
+        Authorization: this.getSessionToken,
+      },
+    });
+
+    return res.data;
+  }
+
+  async getTutorial(videoId: string) {
+    const res: { data: apiResponse<ITutorial> } = await api.get(
+      `/get-tutorial/${videoId}`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  async markTutorialAsCompleted(payload: ITutorial | ITutorial[]) {
+    const res: { data: apiResponse } = await api.post(
+      `/mark-tutorial-as-completed/`,
+      Array.isArray(payload) ? payload : [payload],
+      {
+        headers: {
+          Authorization: this.getSessionToken,
+        },
+      }
+    );
+
+    return res.data;
+  }
+
+  async watchTutorial() {
+    const res: { data: apiResponse<number | undefined | null> } =
+      await api.post(`/watch-tutorial/`, undefined, {
+        headers: { Authorization: this.getSessionToken },
+      });
+    return res.data;
+  }
+
+  async hasFinishedTutorialVideos() {
+    const res: { data: apiResponse<boolean> } = await api.get(
+      `/has-finished-tutorial-videos/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  async exportCustomersData(
+    type: "excel" | "json",
+    date: { from?: string; to?: string }
+  ) {
+    return await api.post(
+      `/export-customers-data/`,
+      { type, ...date },
+      { headers: { Authorization: this.getSessionToken }, responseType: "blob" }
+    );
+  }
+
+  async customerHelper(prompt: string, storeId: string, sessionId: string) {
+    const res: { data: apiResponse<string> } = await api.post(
+      `/customer-ai-chat/${storeId}/`,
+      { prompt, sessionId }
+    );
+
+    return res.data;
+  }
+
+  async getAiConversation(
+    userId?: string,
+    storeId?: string,
+    sessionId?: string
+  ) {
+    const q = queryString.stringify({ userId, storeId, sessionId });
+    const res: { data: apiResponse<aiChatResponse[]> } = await api.get(
+      `/get-ai-conversation/?${q}`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async aiStoreAssistant(query: string, sessionId?: string) {
+    const res = await api.post(
+      `/ai-store-assistant/`,
+      { query, sessionId },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+    return res.data;
+  }
+
+  get generateSessionId() {
+    const now = new Date();
+    const aiSessionId = Cookie.get("ai-session-id");
+
+    if (!aiSessionId) {
+      now.setMinutes(now.getMinutes() + 20);
+      const session = Cookie.set("ai-session-id", generateRandomString(20), {
+        expires: now,
+      });
+
+      return session;
+    }
+
+    return aiSessionId;
+  }
 }
 
 export const formatDate = (
@@ -754,8 +890,7 @@ export const getProductPrice = (product: IProduct, size: string) => {
 };
 
 export function generateTailwindClasses(primaryColor: string) {
-  // Define the color variants based on Tailwind's naming convention
-  const classes = {
+  return {
     bg: {
       default: `bg-[${primaryColor}]`,
       light: `bg-[${primaryColor}]`,
@@ -768,12 +903,12 @@ export function generateTailwindClasses(primaryColor: string) {
       dark: `text-[${primaryColor}]`, // Adjust if necessary
     },
   };
-
-  return classes;
 }
 
 export const doesAllCategoriesHasImage = (categories: ICategory[]) => {
-  if (!categories.length) return false;
+  if (!categories.length) {
+    return false;
+  }
 
   return categories.every((category) => Boolean(category.img));
 };
@@ -821,14 +956,12 @@ export const isPathMatching = (
   const path = location.pathname.split("/");
   const _page = page.split("/")[pageLevel];
 
-  const _isCurrentPage = path[level]?.toLowerCase() === _page?.toLowerCase();
-
-  return _isCurrentPage;
+  return path[level]?.toLowerCase() === _page?.toLowerCase();
 };
 
 export function addQueryParameter(key: string, value: string, url?: string) {
   const query = url?.split("?");
-  const location = window.location;
+  const { location } = window;
 
   // Parse existing query parameters
   const queryObject = qs.parse(query?.[1] || location.search);
@@ -836,11 +969,8 @@ export function addQueryParameter(key: string, value: string, url?: string) {
   // Add or update the new query parameter
   queryObject[key] = value;
 
-  // Rebuild the query string with the updated parameters
-  const updatedQuery = qs.stringify(queryObject);
-
   // Return the full URL with the new query string
-  return updatedQuery;
+  return qs.stringify(queryObject);
 }
 
 export const getInitials = (name: string = "") => {

@@ -1,5 +1,11 @@
 import { FC, useState } from "react";
-import { PlusIcon, Pencil, Trash2Icon, ShoppingBag } from "lucide-react";
+import {
+  PlusIcon,
+  Pencil,
+  Trash2Icon,
+  ShoppingBag,
+  LibraryBigIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -19,6 +25,7 @@ import { useToastError } from "@/hooks/use-toast-error";
 import { SaveChanges } from "./save-store-front-changes";
 import { toast } from "@/hooks/use-toast";
 import { ConfirmationModal } from "./confirmation-modal";
+import { EmptyProductState } from "./empty";
 
 interface CollectionProps {
   id: string;
@@ -211,18 +218,29 @@ const CollectionManager: FC<{ store?: Partial<IStore> }> = ({ store }) => {
           <h2 className="text-lg font-semibold mb-4">Collections</h2>
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-4">
-              {categories.map((collection) => (
-                <Collection
-                  id={collection._id || ""}
-                  key={collection._id}
-                  name={collection.name}
-                  icon={collection.icon}
-                  showImage={showImages}
-                  img={collection.img}
-                  storeId={store?._id}
-                  onEdit={() => handleEditCollection(collection)}
-                />
-              ))}
+              {!categories.length ? (
+                <EmptyProductState icon={LibraryBigIcon}>
+                  <CreateCollection>
+                    <Button variant="ringHover" className="gap-2">
+                      <PlusIcon size={17} />
+                      Create Collection
+                    </Button>
+                  </CreateCollection>
+                </EmptyProductState>
+              ) : (
+                categories.map((collection) => (
+                  <Collection
+                    id={collection._id || ""}
+                    key={collection._id}
+                    name={collection.name}
+                    icon={collection.icon}
+                    showImage={showImages}
+                    img={collection.img}
+                    storeId={store?._id}
+                    onEdit={() => handleEditCollection(collection)}
+                  />
+                ))
+              )}
             </div>
           </ScrollArea>
         </div>

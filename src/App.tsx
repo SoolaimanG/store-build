@@ -27,6 +27,10 @@ import DashboardCoupon from "./pages/admin/dashboard-coupon";
 import StoreTrackOrder from "./store/store-track-order";
 import StoreOrderDetail from "./store/store-order-detail";
 import DashboardSettings from "./pages/admin/dashboard-settings";
+import DashboardReferrals from "./pages/admin/dashboard-referrals";
+import DashboardTutorial from "./pages/admin/dashboard-tutorial";
+import DashboardDynamicTutorial from "./pages/admin/dashboard-dynamic-tutorial";
+import ContactUS from "./pages/contact-us";
 
 NProgress.configure({ showSpinner: false });
 
@@ -191,6 +195,31 @@ function App() {
                   </DashboardProvider>
                 }
               />
+              <Route
+                path={PATHS.STORE_REFERRALS}
+                element={
+                  <DashboardProvider>
+                    <DashboardReferrals />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_TUTORIAL}
+                element={
+                  <DashboardProvider>
+                    <DashboardTutorial />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.STORE_TUTORIAL + ":videoId"}
+                element={
+                  <DashboardProvider>
+                    <DashboardDynamicTutorial />
+                  </DashboardProvider>
+                }
+              />
+              <Route path={PATHS.CONTACT_US} element={<ContactUS />} />
             </Routes>
           </AppLayOut>
         </BrowserRouter>

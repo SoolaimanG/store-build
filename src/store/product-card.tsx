@@ -63,7 +63,7 @@ const ProductCard: FC<
                 size={18}
                 className="transition-transform duration-300 group-hover/2:rotate-12"
               />
-              <span className="overflow-hidden -mr-2 group-hover/2:-mr-0 transition-all duration-300 max-w-0 group-hover/2:max-w-xs">
+              <span className="overflow-hidden md:-mr-2 group-hover/2:-mr-0 transition-all duration-300 md:max-w-0 group-hover/2:max-w-xs">
                 Buy Now
               </span>
             </Button>
@@ -88,7 +88,10 @@ const ProductCard: FC<
             />
           ))}
         </div>
-        <Text className="line-clamp-1 font-light">{description}</Text>
+        <Text
+          dangerouslySetInnerHTML={{ __html: description }}
+          className="line-clamp-1 font-light"
+        />
         <div>
           <QuickProductView
             product={{

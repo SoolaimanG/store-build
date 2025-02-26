@@ -64,6 +64,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStoreBuildState } from "@/store";
 import { useToastError } from "@/hooks/use-toast-error";
 import { ManageStoreAddress } from "./manage-store-address";
+import AddPhoneNumber from "./add-phone-number";
+import { EmptyProductState } from "./empty";
 
 export function ManageIntegration({
   integration,
@@ -343,7 +345,7 @@ export function ManageIntegration({
 
   const renderIntegrationOptions = () => {
     switch (integration.id) {
-      case "flutterwave":
+      case "paystack":
         return (
           <div className="">
             <Form {...form}>
@@ -423,13 +425,21 @@ export function ManageIntegration({
                       name="storePhoneNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Store Phone Number</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Store Phone Number</FormLabel>
+                            <AddPhoneNumber type="button">
+                              <Button variant="link" className="h-6">
+                                Edit Phone Number
+                              </Button>
+                            </AddPhoneNumber>
+                          </div>
                           <FormControl>
                             <Input
+                              {...field}
                               readOnly
                               placeholder="+1234567890"
                               className="text-sm"
-                              {...field}
+                              value={user?.phoneNumber}
                             />
                           </FormControl>
                           <FormMessage />
@@ -560,11 +570,15 @@ export function ManageIntegration({
           <div className="space-y-5">
             <header className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-semibold">Delivery Settings</h2>
-                <Text>Configure your delivery locations and preferences</Text>
+                <h2 className="md:text-2xl text-lg font-semibold">
+                  Delivery Settings
+                </h2>
+                <Text className="tracking-tight">
+                  Configure your delivery locations and preferences
+                </Text>
               </div>
               <ManageStoreAddress>
-                <Button variant="link" className="gap-2">
+                <Button variant="link" className="md:gap-">
                   <Plus size={18} /> Manage Address
                 </Button>
               </ManageStoreAddress>
@@ -717,7 +731,20 @@ export function ManageIntegration({
         );
 
       default:
-        return <p>No management options available for this integration.</p>;
+        return (
+          <EmptyProductState
+            header="404 -Not Found"
+            message="No management options available for this integration."
+          >
+            <Button
+              size="lg"
+              variant="ringHover"
+              onClick={() => setIsOpen(false)}
+            >
+              Close
+            </Button>
+          </EmptyProductState>
+        );
     }
   };
 

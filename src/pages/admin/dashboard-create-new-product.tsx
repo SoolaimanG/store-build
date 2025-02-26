@@ -414,14 +414,14 @@ const ProductManagement = () => {
   useToastError(regionsError || categoriesError || error);
 
   return (
-    <Section className="max-w-7xl mx-auto p-6">
+    <Section className="max-w-7xl mx-auto p-6 md:p-0">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex items-center justify-between gap-3 mb-8"
       >
-        <h2 className="font-semibold text-2xl line-clamp-1">
+        <h2 className="text-4xl line-clamp-1">
           {isEditingMode ? `Edit Product ${productId}` : "Add New Product"}
         </h2>
         <div className="flex items-center gap-2">
@@ -432,13 +432,6 @@ const ProductManagement = () => {
             size="sm"
           >
             Save Draft
-          </Button>
-          <Button
-            disabled={form.formState.isSubmitting || isUploading}
-            size="sm"
-            onClick={() => onSubmit()}
-          >
-            {isEditingMode ? "Update Product" : "Add Product"}
           </Button>
         </div>
       </motion.header>
@@ -1349,6 +1342,14 @@ const ProductManagement = () => {
             </Card>
           </div>
         </form>
+        <Button
+          disabled={form.formState.isSubmitting || isUploading}
+          size="lg"
+          onClick={() => onSubmit()}
+          className="w-full mt-4"
+        >
+          {isEditingMode ? "Update Product" : "Add Product"}
+        </Button>
       </Form>
     </Section>
   );

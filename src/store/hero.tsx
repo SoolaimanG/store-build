@@ -16,7 +16,8 @@ import {
 import { menu } from "@/constants";
 import { ProductSearchDialog } from "@/components/product-search";
 import { CART } from "./store-cart";
-import { cn, isPathMatching } from "@/lib/utils";
+import { cn, isPathMatching, storeBuilder } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 const MobileMenu: FC<{ children: ReactNode; isOpen?: boolean }> = ({
   children,
@@ -29,16 +30,16 @@ const MobileMenu: FC<{ children: ReactNode; isOpen?: boolean }> = ({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger>{children}</SheetTrigger>
-      <SheetContent side="left" className="w-[50%]">
+      <SheetContent side="left" className="w-[80%]">
         <SheetHeader>
           <Logo name={storeName} />
         </SheetHeader>
-        <div className="mt-10 flex flex-col space-y-5">
+        <div className="mt-10 flex flex-col space-y-10">
           {menu(storeCode).map((m, idx) => (
             <Link
               to={m.path}
               key={idx}
-              className="text-2xl hover:text-gray-400 hover:font-semibold"
+              className="text-xl hover:text-gray-400 hover:font-semibold"
             >
               {m.name}
             </Link>
@@ -141,23 +142,30 @@ export const HeroSectionNavBar: FC<{ isLoading?: boolean }> = () => {
 
 const HeroSection = () => {
   const { currentStore } = useStoreBuildState();
+  const { data } = useQuery({
+    queryKey: ["product-type"],
+    queryFn: () => storeBuilder.getProductTypes(),
+  });
+
+  const { data: productTypes = [] } = data || {};
+  const productType =
+    productTypes.find((p) => p._id === currentStore?.productType)?.name ||
+    "Store Type";
 
   return (
     <div
       style={{ background: currentStore?.customizations?.theme.secondary }}
       className="w-screen"
     >
-      <Section className="pt-20 w-full">
+      <Section className="md:pt-20 pt-32 w-full">
         <div className="w-full flex flex-col space-y-4 items-center justify-center py-6">
-          <header className="font-bold">ORANGE - PINEAPPLE - PAWPAW</header>
+          <header className="font-bold">{currentStore?.storeName}</header>
           <div className="flex flex-col space-y-5">
             <h2 className="text-center md:text-4xl text-3xl font-extralight">
-              NATURAL BEAUTY SKINCARE
+              {productType + "  Store"}
             </h2>
             <Text className="text-center text-white font-light">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Maiores
-              exercitationem blanditiis eveniet quod illo quisquam iste eius
-              eligendi, laborum repellat.
+              {currentStore?.description || ""}
             </Text>
           </div>
         </div>

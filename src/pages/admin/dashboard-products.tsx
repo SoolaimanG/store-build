@@ -4,6 +4,7 @@ import {
   FilterIcon,
   Package2,
   Package2Icon,
+  PackageSearch,
   SearchIcon,
   XIcon,
 } from "lucide-react";
@@ -167,9 +168,7 @@ export default function ProductsPage() {
         variants={fadeInUp}
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            Products
-          </h1>
+          <h1 className="tracking-tight text-4xl">Products</h1>
           <p className="text-sm text-muted-foreground md:text-base">
             Manage your product inventory and track stock levels
           </p>
@@ -206,7 +205,7 @@ export default function ProductsPage() {
 
       <motion.div variants={fadeInUp}>
         <Card className="p-1 md:p-2">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 p-2">
             <div className="flex flex-col gap-4">
               <motion.div
                 className="flex w-full items-center gap-2"
@@ -238,7 +237,7 @@ export default function ProductsPage() {
                     currentSort={queryParams.sort as "low-to-high"}
                   />
                 ) : (
-                  <EmptyProductState>
+                  <EmptyProductState icon={PackageSearch}>
                     <Link
                       to={
                         PATHS.STORE_PRODUCTS + generateRandomString(8) + "#new"

@@ -2,13 +2,15 @@ import {
   BrushIcon,
   ChartBar,
   DollarSign,
+  Footprints,
   HeadphonesIcon,
   LayoutGrid,
   LayoutPanelTop,
   Sparkles,
   Ticket,
+  UserRoundPlus,
 } from "lucide-react";
-import { bentoCardType, OrderDetails, PATHS, templateShowCase } from "./types";
+import { bentoCardType, ITutorial, PATHS, templateShowCase } from "./types";
 import JewelryTemplateImage from "@/assets/jewelry-template-img.jpeg";
 import ClothingTemplateImage from "@/assets/clothing-template-img.jpeg";
 import TechTemplateImage from "@/assets/tech-template-img.jpeg";
@@ -161,6 +163,16 @@ export const sidebarItems = [
     icon: Ticket,
     label: "Coupon",
     path: PATHS.STORE_COUPON,
+  },
+  {
+    icon: Footprints,
+    label: "Tutorials",
+    path: PATHS.STORE_TUTORIAL,
+  },
+  {
+    icon: UserRoundPlus,
+    label: "Referrals",
+    path: PATHS.STORE_REFERRALS,
   },
   {
     icon: Settings,
@@ -457,7 +469,7 @@ export const menu = (
   },
   {
     name: "Collections",
-    path: `/store/${storeCode}/products/?category=${payload?.category}`,
+    path: `/store/${storeCode}/products/?category=${payload?.category || ""}`,
   },
   {
     name: "Products",
@@ -745,95 +757,163 @@ export const popIn: Variants = {
   },
 };
 
-export const sampleOrder: OrderDetails = {
-  id: "5913",
-  item: {
-    name: "Apple Watch Series 8 GPS",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/original-f1ef06c1225c6f6d92182859d8b01f8e-8EBwqEidfGLqBEkn0dhByTmheWLkXs.webp",
+export const tutorialVideos: (ITutorial & {
+  videoUrl: string;
+  relatedVideos?: string[];
+})[] = [
+  {
+    _id: "1",
+    videoUrl: "https://example.com/video1.mp4",
+    title: "Getting Started with Dashboard",
+    description:
+      "Learn how to navigate and use the dashboard effectively to monitor key metrics. This tutorial covers an overview of the interface, key features like real-time analytics, and how to access detailed reports to make informed decisions about your business operations. By the end of this video, you'll be comfortable using the dashboard as a central hub for managing your store's performance. Additionally, it provides a foundation for exploring advanced tools available in the dashboard, ensuring your store's operational efficiency is maximized. Understand the nuances of data interpretation and apply these insights to boost productivity and customer satisfaction.",
+    isCompleted: false,
+    category: "Dashboard",
+    user: "User 1",
+    rating: 4.5,
+    type: "video",
+    relatedVideos: ["2", "4", "6", "8", "9"],
   },
-  courier: {
-    name: "R. Gosling",
-    company: "UPS",
-    isManualShipping: false,
+  {
+    _id: "2",
+    videoUrl: "https://example.com/video2.mp4",
+    title: "Managing Products",
+    description:
+      "Step-by-step guide to adding, editing, and organizing products in your store. This video will walk you through the process of creating product listings with detailed descriptions, managing inventory levels to avoid stockouts, and categorizing products for easy customer navigation. You'll also learn best practices for optimizing product pages to boost sales and improve customer experience. Furthermore, the tutorial highlights how to analyze product performance and adapt strategies to meet evolving market trends, ensuring your inventory remains competitive and appealing to your target audience.",
+    isCompleted: false,
+    category: "Products",
+    user: "User 2",
+    rating: 4.7,
+    type: "video",
+    relatedVideos: ["3", "8"],
   },
-  startTime: "14 Jan 2023, 15:43:23",
-  address: "4517 Washington Ave. Manchester, Kentucky",
-  status: "in_progress",
-  tracking: {
-    number: "3409-4934-4253",
-    warehouse: "Apple Spot 13b",
-    estimatedDelivery: "15/09/2023",
+  {
+    _id: "3",
+    videoUrl: "https://example.com/video3.mp4",
+    title: "Creating New Products",
+    description:
+      "How to use the CreateProducts feature to add new items to your inventory. This tutorial explains everything from entering essential product details, uploading high-quality images, to setting competitive prices. You'll also discover tips for using product tags and attributes to enhance searchability and improve the shopping experience for your customers. Beyond the basics, this video includes advanced techniques for leveraging customer feedback to refine product listings and drive higher engagement, making it an invaluable resource for effective product management.",
+    isCompleted: false,
+    category: "CreateProducts",
+    user: "User 3",
+    rating: 4.4,
+    type: "video",
+    relatedVideos: ["2", "8"],
   },
-  timeline: [
-    {
-      id: "1",
-      title: "Product Shipped",
-      time: "13/09/2023 5:23 pm",
-      details: [
-        "Courier Service: UPS, R. Gosling",
-        "Estimated Delivery Date: 15/09/2023",
-      ],
-      status: "completed",
-    },
-    {
-      id: "2",
-      title: "Product Packaging",
-      time: "13/09/2023 4:13 pm",
-      details: ["Tracking number: 3409-4934-4253", "Warehouse: Apple Spot 13b"],
-      status: "completed",
-    },
-    {
-      id: "3",
-      title: "Order Confirmed",
-      time: "13/09/2023 3:53 pm",
-      status: "completed",
-    },
-    {
-      id: "4",
-      title: "Order Placed",
-      time: "13/09/2023 3:43 pm",
-      status: "completed",
-    },
-  ],
-};
-
-export const manualOrder: OrderDetails = {
-  id: "5914",
-  item: {
-    name: "Custom Handmade Watch Strap",
-    image: "/placeholder.svg?height=80&width=80",
+  {
+    _id: "4",
+    videoUrl: "https://example.com/video4.mp4",
+    title: "Managing Orders",
+    description:
+      "Learn how to view, track, and fulfill orders efficiently. This video provides an in-depth guide to order management, including how to process payments, update order statuses, and handle cancellations or returns. You'll also get insights into using order analytics to identify trends and improve fulfillment workflows, ensuring a seamless customer experience. Additionally, the tutorial covers advanced reporting tools that can help identify bottlenecks in the order process, enabling proactive solutions for better customer satisfaction and operational effectiveness.",
+    isCompleted: false,
+    category: "Orders",
+    user: "User 4",
+    rating: 4.6,
+    type: "video",
+    relatedVideos: ["8", "5"],
   },
-  courier: {
-    name: "Local Delivery",
-    company: "In-house",
-    isManualShipping: true,
+  {
+    _id: "5",
+    videoUrl: "https://example.com/video5.mp4",
+    title: "Creating New Orders",
+    description:
+      "Step-by-step guide to using CreateOrders to process customer orders. You'll learn how to manually create orders for customers who contact you directly, apply discounts or coupons, and ensure accurate order details are captured. This tutorial also discusses ways to personalize orders for customer satisfaction and retention. Moreover, it emphasizes the importance of maintaining consistent communication during order processing to build trust and encourage repeat business, making it a must-watch for enhancing customer relationships.",
+    isCompleted: false,
+    category: "CreateOrders",
+    user: "User 5",
+    rating: 4.5,
+    type: "video",
+    relatedVideos: ["4", "8"],
   },
-  startTime: "15 Jan 2023, 09:23:45",
-  address: "789 Craftsman Lane, Artisan City, AC 12345",
-  status: "in_progress",
-  timeline: [
-    {
-      id: "1",
-      title: "Crafting in Progress",
-      time: "15/01/2023 10:23 am",
-      details: [
-        "Estimated completion: 3-5 business days",
-        "Artisan: Master Craftsman Team",
-      ],
-      status: "in_progress",
-    },
-    {
-      id: "2",
-      title: "Order Confirmed",
-      time: "15/01/2023 9:53 am",
-      status: "completed",
-    },
-    {
-      id: "3",
-      title: "Order Placed",
-      time: "15/01/2023 9:23 am",
-      status: "completed",
-    },
-  ],
-};
+  {
+    _id: "6",
+    videoUrl: "https://example.com/video6.mp4",
+    title: "Managing Customers",
+    description:
+      "How to view, edit, and communicate with your customer base. This video teaches you to access customer profiles, track their purchase history, and understand their preferences. You'll also learn how to segment customers into groups for targeted marketing campaigns and use communication tools to build strong relationships and drive repeat business. Additionally, the video offers practical advice on leveraging customer insights to craft personalized experiences, fostering loyalty and boosting your store's reputation in the competitive market.",
+    isCompleted: false,
+    category: "Customers",
+    user: "User 6",
+    rating: 4.3,
+    type: "video",
+    relatedVideos: ["7", "5", "4", "3", "2", "1"],
+  },
+  {
+    _id: "7",
+    videoUrl: "https://example.com/video7.mp4",
+    title: "Customizing Storefront",
+    description:
+      "Learn how to design and manage your storefront layout and branding. This tutorial walks you through customizing your store's appearance, from choosing templates to adjusting colors, fonts, and layouts. You'll also explore options for adding banners, promotional sections, and optimizing your store's design for mobile devices to enhance user experience and boost conversions. Furthermore, the video emphasizes the importance of consistent branding across all touchpoints, ensuring your store resonates well with customers and stands out in the marketplace.",
+    isCompleted: false,
+    category: "Storefront",
+    user: "User 7",
+    rating: 4.7,
+    type: "video",
+    relatedVideos: ["8", "9"],
+  },
+  {
+    _id: "8",
+    videoUrl: "https://example.com/video8.mp4",
+    title: "Setting Up Integrations",
+    description:
+      "How to connect third-party tools and APIs using the Integrations feature. This video demonstrates the process of integrating payment gateways, marketing tools, and analytics platforms to streamline your business operations. You'll also learn about troubleshooting common issues and ensuring seamless data flow between your store and external services. Additionally, the tutorial highlights key security measures to adopt when integrating external tools, safeguarding your data and maintaining a robust operational framework.",
+    isCompleted: false,
+    category: "Integrations",
+    user: "User 8",
+    rating: 4.4,
+    type: "video",
+    relatedVideos: ["1", "2", "4"],
+  },
+  {
+    _id: "9",
+    videoUrl: "https://example.com/video9.mp4",
+    title: "Managing Coupons",
+    description:
+      "Step-by-step guide to creating, applying, and tracking coupon codes. This tutorial explains how to use coupons to attract new customers, encourage repeat purchases, and boost sales during promotional campaigns. You'll also learn how to set expiration dates, minimum order requirements, and analyze the effectiveness of your coupon strategies. Beyond that, it delves into advanced techniques for designing enticing promotional offers that align with seasonal trends and customer preferences, maximizing their impact on revenue.",
+    isCompleted: false,
+    category: "Coupons",
+    user: "User 9",
+    rating: 4.6,
+    type: "video",
+    relatedVideos: ["6"],
+  },
+  {
+    _id: "10",
+    videoUrl: "https://example.com/video10.mp4",
+    title: "Setting Up Referrals",
+    description:
+      "How to create and track referral programs to grow your user base. This video covers designing referral incentives, tracking referrals through your dashboard, and leveraging analytics to optimize your program. By the end, you'll be equipped to use referrals as a powerful tool for organic growth and increased engagement. Additionally, the tutorial highlights ways to measure the effectiveness of different referral campaigns, enabling you to refine strategies for maximizing reach and profitability.",
+    isCompleted: false,
+    category: "Referrals",
+    user: "User 10",
+    rating: 4.5,
+    type: "video",
+  },
+  {
+    _id: "12",
+    videoUrl: "https://example.com/video11.mp4",
+    title: "Learn to Use AI",
+    description:
+      "Discover how to leverage AI features for enhanced app performance and user preferences. This tutorial introduces the AI-driven tools available in your store builder, including personalized product recommendations, automated customer support, and data-driven insights. You'll see practical demonstrations of how AI can save time, increase efficiency, and provide a superior customer experience. Furthermore, the tutorial explores cutting-edge AI applications that can adapt to market changes, keeping your business ahead in an evolving digital landscape.",
+    isCompleted: false,
+    category: "Settings",
+    user: "User 11",
+    rating: 5.0,
+    type: "video",
+    relatedVideos: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+  },
+  {
+    _id: "11",
+    videoUrl: "https://example.com/video11.mp4",
+    title: "Customizing Settings",
+    description:
+      "Configure app settings for optimal performance and user preferences. This video covers the various customization options available, such as adjusting notification preferences, setting up security measures, and personalizing the app's appearance. You'll learn how to ensure that the platform aligns perfectly with your operational needs and enhances overall efficiency. Additionally, the tutorial delves into advanced customization features that cater to unique business requirements, offering unparalleled flexibility and control over your store's functionality.",
+    isCompleted: false,
+    category: "Settings",
+    user: "User 11",
+    rating: 4.8,
+    type: "video",
+    relatedVideos: ["8"],
+  },
+];

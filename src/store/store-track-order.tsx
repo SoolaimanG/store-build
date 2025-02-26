@@ -43,7 +43,7 @@ export default function StoreTrackOrder() {
       <div className="w-full max-w-xl space-y-8">
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">
-            Enter the tracking number for your package
+            Enter the Order ID for your order....
           </h1>
         </div>
 
@@ -53,7 +53,7 @@ export default function StoreTrackOrder() {
               htmlFor="tracking-code"
               className="text-sm font-medium text-gray-300 uppercase"
             >
-              Tracking Code
+              Order ID
             </label>
             <Input
               id="tracking-code"
@@ -68,7 +68,7 @@ export default function StoreTrackOrder() {
 
           <div className="text-sm text-gray-200">
             By continuing, I represent that I have read, understand, and fully
-            agree to the Sendbox{" "}
+            agree to the {store?.storeName}{" "}
             <Link
               style={{ color: store?.customizations?.theme.primary }}
               to="/terms"

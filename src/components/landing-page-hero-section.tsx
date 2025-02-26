@@ -32,18 +32,29 @@ const stagger = {
 
 export const LandingPageHeroSection = () => {
   const [prompt, setPrompt] = useState("");
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated } = useAuthentication(undefined, 10000);
   const n = useNavigate();
 
   const onGenerate = () => {
-    if (!prompt) return;
-
-    if (!isAuthenticated) {
-      const param = queryString.parse(location.search);
-      const q = queryString.stringify({ ...param, useAi: prompt });
-      n(`${PATHS.SIGNIN}?callbackUrl=${location.href}?${q}`);
+    if (!prompt) {
       return;
     }
+
+    // If the user is not loggin ensure that the user is logged in before performing request
+    if (!isAuthenticated) {
+      {
+      }
+      const param = queryString.parse(location.search);
+      const q = queryString.stringify({
+        ...param,
+        useAi: encodeURIComponent(prompt),
+        redirectTo: location.href,
+      });
+      n(`${PATHS.SIGNIN}?${q}`);
+      return;
+    }
+
+    //TODO: Trigger a function to generate store with the AI
 
     n(PATHS.DASHBOARD);
   };

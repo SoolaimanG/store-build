@@ -495,7 +495,15 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
                           <SelectContent>
                             <SelectItem value="waybill">Way Bill</SelectItem>
                             <SelectItem value="pick_up">Pick Up</SelectItem>
-                            <SelectItem value="sendbox">Send Box</SelectItem>
+                            {deliveryIntegrationData?.data.integration
+                              .isConnected && (
+                              <SelectItem
+                                disabled={deliveryIntegrationLoading}
+                                value="sendbox"
+                              >
+                                Send Box
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />

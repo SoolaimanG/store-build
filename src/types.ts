@@ -16,6 +16,10 @@ export enum PATHS {
   STORE_INTEGRATIONS = "/store-integrations/",
   STORE = "/store/",
   STORE_COUPON = "/store/coupon/",
+  STORE_TUTORIAL = "/store-tutorial/",
+  STORE_REFERRALS = "/store-referrals/",
+  STORE_BALANCE = "/store-balance/",
+  CONTACT_US = "/contact-us/",
 }
 
 export type IDashboardMetrics = {
@@ -120,10 +124,23 @@ export type lucideIcons = React.ForwardRefExoticComponent<
   Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
 >;
 
+export type ITutorial = {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  isCompleted?: boolean;
+  user: string;
+  rating: number;
+  videoId?: string;
+  type: "video" | "image";
+};
+
 export interface apiResponse<T = any> {
   status: string;
   message: string;
   data: T;
+  code?: string | number;
 }
 
 export type IStepProps = {
@@ -259,6 +276,8 @@ export type IUser = {
   storeCode: string;
   balance?: number;
   paymentDetails: IPaymentDetails;
+  phoneNumber?: string;
+  tutorialVideoWatch?: boolean;
 } & ITimeStamp;
 
 export type IOTP = {
@@ -341,6 +360,7 @@ export type IStore = {
   description?: string;
   owner: string;
   isActive: boolean;
+  previewFor?: string;
   paymentDetails: IPaymentDetails;
   customizations?: {
     logoUrl: string;
@@ -941,4 +961,21 @@ export interface chargeResponse {
     access_code: string;
     reference: string;
   };
+}
+
+export interface aiChatResponse extends ITimeStamp {
+  _id: string;
+  userPrompt?: string;
+  userId: string;
+  sessionId: string;
+  actionPerformed: string;
+  intent: string;
+  aiResponse?: string;
+  metadata: {
+    tokensUsed: number;
+    model: string;
+    confidenceScore: number;
+    _id: string;
+  };
+  __v: 0;
 }

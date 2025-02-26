@@ -184,7 +184,7 @@ export function AddressForm({
             </div>
             <div>
               <label className="text-sm font-medium">Phone *</label>
-              <Input required value={formData.phone} readOnly />
+              <Input required value={user?.phoneNumber || ""} readOnly />
             </div>
           </div>
 
