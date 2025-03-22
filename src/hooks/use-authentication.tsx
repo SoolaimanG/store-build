@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 import { useStoreBuildState } from "@/store";
-import { useToastError } from "./use-toast-error";
 
 export const useAuthentication = (key?: any, retry?: number) => {
   //
