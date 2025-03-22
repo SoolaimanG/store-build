@@ -47,7 +47,7 @@ const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
       <DashBoardNavBar />
       {!isMobile && <SideBar />}
       <main className={cn("pt-20 pl-16", isMobile && "pl-0 relative")}>
-        <AIChat>
+        <AIChat type="storeHelper">
           <Button
             variant="shine"
             size="icon"
