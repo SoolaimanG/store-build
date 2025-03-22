@@ -11,7 +11,7 @@ export const EmptyProductState: FC<{
     Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
   >;
 }> = ({
-  message = "   Get started by adding your first product to your store.",
+  message = "Get started by adding your first product to your store.",
   header = "No products found",
   children = <div className="sr-only" />,
   ...rest

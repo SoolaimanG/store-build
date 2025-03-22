@@ -188,12 +188,25 @@ export class StoreBuild {
     const res: {
       data: apiResponse<
         {
-          code: string;
-          id: string;
           name: string;
+          slug: string;
+          code: string;
+          longcode: string;
+          gateway: null;
+          pay_with_bank: boolean;
+          active: boolean;
+          is_deleted: boolean;
+          country: "Nigeria";
+          currency: "NGN";
+          type: string;
+          id: number;
+          createdAt: string;
+          updatedAt: string;
         }[]
       >;
-    } = await api.get(`/get-banks/`);
+    } = await api.get(`/get-banks/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
 
     return res.data;
   }
@@ -863,6 +876,59 @@ export class StoreBuild {
 
     return aiSessionId;
   }
+
+  async subscribeToChatBot() {
+    const res: { data: apiResponse } = await api.post(
+      "/subscribe-to-chat-bot/",
+      undefined,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getOnboardingFlows() {
+    const res: {
+      data: apiResponse<{
+        isEmailVerified: boolean;
+        phoneNumber: string;
+        hasProduct: boolean;
+        addPaymentMethod: boolean;
+        tutorialVideoWatch: boolean;
+      }>;
+    } = await api.get(`/get-onboarding-flow/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+}
+
+export function formatTextToHTML(text: string) {
+  // Split the text by the numbered list
+  const lines = text.split(/\d+\.\s+/).filter(Boolean);
+
+  // Build the HTML content
+  const html = `
+    <div class="ai-response">
+      <h2>Here's a list of things I can do for you:</h2>
+      <ul>
+        ${lines
+          .map((line) => {
+            const [title, ...rest] = line.split(":");
+            const description = rest.join(":").trim();
+            return `
+              <li>
+                <strong>${title.trim()}:</strong> ${description}
+              </li>
+            `;
+          })
+          .join("")}
+      </ul>
+    </div>
+  `;
+
+  return html.trim();
 }
 
 export const formatDate = (

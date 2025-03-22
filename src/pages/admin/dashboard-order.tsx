@@ -353,7 +353,7 @@ export default function DashboardOrders() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {order.orders.map((order) => (
+                  {order?.orders?.map((order) => (
                     <TableRow
                       onClick={() =>
                         n(PATHS.STORE_ORDERS + order._id, {
@@ -399,7 +399,7 @@ export default function DashboardOrders() {
                       <TableCell>{order.products.length} items</TableCell>
                       {!isMobile && (
                         <TableCell>
-                          {order.shippingDetails.trackingNumber || "-"}
+                          {order?.shippingDetails?.trackingNumber || "-"}
                         </TableCell>
                       )}
                       <TableCell>

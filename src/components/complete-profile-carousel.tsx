@@ -1,6 +1,13 @@
 "use client";
 
-import { Mail, Phone, Package, Video, UserRoundPlus } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  Package,
+  Video,
+  UserRoundPlus,
+  Landmark,
+} from "lucide-react";
 import AutoPlay from "embla-carousel-autoplay";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,6 +26,8 @@ import { Link } from "react-router-dom";
 import { PATHS } from "@/types";
 import AddPhoneNumber from "./add-phone-number";
 import { useQuery } from "@tanstack/react-query";
+import { useToastError } from "@/hooks/use-toast-error";
+import AddBankAccount from "./add-bank-account";
 
 export function ProfileCompletionCarousel() {
   const { setOpenOTPValidator } = useStoreBuildState();
@@ -42,20 +51,21 @@ export function ProfileCompletionCarousel() {
     }
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["products"],
-    queryFn: () => storeBuilder.getProducts(user?.storeId!, { size: 1 }),
-    refetchInterval: 3000,
-  });
+  const { data: onboardingFlowsData, error: onboardingFlowsDataError } =
+    useQuery({
+      queryKey: ["onboardingFlows"],
+      queryFn: () => storeBuilder.getOnboardingFlows(),
+    });
 
-  const { data: _data } = data || {};
+  useToastError(onboardingFlowsDataError);
 
-  const { products = [] } = _data || {};
-
-  const { data: __data } = useQuery({
-    queryKey: ["has-finished-tutorial-video"],
-    queryFn: () => storeBuilder.hasFinishedTutorialVideos(),
-  });
+  const {
+    isEmailVerified = true,
+    phoneNumber = "true",
+    hasProduct = true,
+    tutorialVideoWatch = true,
+    addPaymentMethod = true,
+  } = onboardingFlowsData?.data || {};
 
   return (
     <div className={`relative w-full`}>
@@ -77,7 +87,7 @@ export function ProfileCompletionCarousel() {
               ]}
             >
               <CarouselContent>
-                {!user?.isEmailVerified && (
+                {!isEmailVerified && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
                     <Card className="w-full h-[12rem]">
                       <CardContent className="pt-2">
@@ -104,7 +114,7 @@ export function ProfileCompletionCarousel() {
                     </Card>
                   </CarouselItem>
                 )}
-                {!user?.phoneNumber && (
+                {!phoneNumber && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
                     <Card className="w-full h-[12rem]">
                       <CardContent className="pt-2">
@@ -129,7 +139,7 @@ export function ProfileCompletionCarousel() {
                     </Card>
                   </CarouselItem>
                 )}
-                {!products.length && !isLoading && (
+                {!hasProduct && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
                     <Card className="w-full h-[12rem]">
                       <CardContent className="pt-2">
@@ -166,6 +176,33 @@ export function ProfileCompletionCarousel() {
                     </Card>
                   </CarouselItem>
                 )}
+                {!addPaymentMethod && (
+                  <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
+                    <Card className="w-full h-[12rem]">
+                      <CardContent className="pt-2">
+                        <div className="flex flex-col">
+                          <div className="p-2 bg-primary/10 w-fit rounded-full">
+                            <Landmark size={23} className=" text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold">
+                            Add Payment Details
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Add your account detail to withdraw and recieve
+                            money directly to your account.
+                          </p>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-end items-end py-0 mt-0">
+                        <AddBankAccount>
+                          <Button type="button" variant="ringHover">
+                            Add Bank Account
+                          </Button>
+                        </AddBankAccount>
+                      </CardFooter>
+                    </Card>
+                  </CarouselItem>
+                )}
                 {import.meta.env.VITE_IS_REFERRAL_ONGOING === "true" && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
                     <Card className="w-full h-[12rem]">
@@ -194,7 +231,7 @@ export function ProfileCompletionCarousel() {
                     </Card>
                   </CarouselItem>
                 )}
-                {!__data?.data && (
+                {!tutorialVideoWatch && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
                     <Card className="w-full h-[12rem]">
                       <CardContent className="pt-2">

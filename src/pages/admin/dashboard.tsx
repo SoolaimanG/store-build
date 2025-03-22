@@ -265,7 +265,7 @@ export function RecentSales({ className }: { className?: string }) {
               {recentSales.orders.map((order, index) => (
                 <motion.div
                   key={order._id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors duration-200 mb-2"
+                  className="flex flex-col cursor-pointer sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors duration-200 mb-2"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -433,11 +433,11 @@ export function RecentOrder({ className }: { className?: string }) {
   useToastError(error);
 
   return (
-    <Card className={cn("space-y-4", className)}>
+    <Card className={cn("space-y-2 p-2", className)}>
       <CardHeader>
         <CardTitle className="text-xl sm:text-2xl">My Recent Orders</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-0">
         {isLoading ? (
           <RecentOrdersLoading />
         ) : recentOrders && recentOrders.orders.length > 0 ? (
@@ -452,8 +452,8 @@ export function RecentOrder({ className }: { className?: string }) {
                     {formatAmountToNaira(order.totalAmount)}
                   </span>
                   {Boolean(order.amountLeftToPay) && (
-                    <span className="text-sm text-muted-foreground">
-                      {order.amountLeftToPay}
+                    <span className="text-sm text-destructive">
+                      {formatAmountToNaira(order.amountLeftToPay)}
                     </span>
                   )}
                 </div>
@@ -482,7 +482,7 @@ export function RecentOrder({ className }: { className?: string }) {
                   </span>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   className="text-primary hover:text-primary/60 w-full sm:w-auto"
                   asChild

@@ -89,7 +89,7 @@ export function CreatePickupForm({ onSubmit, order }: CreatePickupFormProps) {
               onValueChange={(e) => setcustomerState(e)}
             >
               <SelectTrigger className="w-full capitalize">
-                <SelectValue placeholder="Select a payment Method to use" />
+                <SelectValue placeholder="Select state for delivery" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

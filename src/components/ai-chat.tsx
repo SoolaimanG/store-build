@@ -22,6 +22,8 @@ import { useToastError } from "@/hooks/use-toast-error";
 import { useStoreBuildState } from "@/store";
 import { EmptyProductState } from "./empty";
 import { Skeleton } from "./ui/skeleton";
+import { Text } from "./text";
+import { marked } from "marked";
 
 interface Message {
   id: string;
@@ -181,14 +183,12 @@ export function AIChat({
     inputRef.current?.focus();
   };
 
-  console.log(store?.customizations);
-
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
-        className="w-full sm:max-w-md p-0 bg-background flex flex-col h-[600px] md:h-full"
+        className="w-full sm:max-w-lg p-0 bg-background flex flex-col h-[600px] md:h-full"
       >
         <SheetHeader className="p-4 border-b">
           <SheetTitle>{aiName}</SheetTitle>
@@ -209,7 +209,7 @@ export function AIChat({
                   onClick={() => handleSubmit(undefined, "Hello AI")}
                 >
                   Say Hello
-                  <Hand size={17} />
+                  <Hand className="-rotate-12" size={17} />
                 </Button>
               </EmptyProductState>
             ) : (
@@ -228,14 +228,19 @@ export function AIChat({
                         : undefined,
                   }}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <Text
+                    dangerouslySetInnerHTML={{
+                      __html: marked(message.content, { breaks: true }),
+                    }}
+                    className="text-sm"
+                  />
                 </div>
               ))
             )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
-        <div className="p-4 border-t flex flex-col space-y-3">
+        <div className="p-4 border-t flex flex-col space-y-1">
           {input === "" && <ExplorePrompts setPrompt={setInput} />}
           <div className="flex flex-wrap gap-1 mb-2">
             {mentions.map((mention) => (
@@ -263,7 +268,24 @@ export function AIChat({
               placeholder="Type your message..."
               value={input}
               onChange={handleInputChange}
-              className="pr-10 min-h-[40px] max-h-[200px] resize-none w-[91%] rounded-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+                  e.preventDefault();
+                  handleSubmit(undefined, input);
+                } else if (e.key === "Enter" && e.shiftKey && e.ctrlKey) {
+                  const textarea = e.target as HTMLTextAreaElement;
+                  const cursorPosition = textarea?.selectionStart;
+                  const textBeforeCursor = input.slice(0, cursorPosition);
+                  const textAfterCursor = input.slice(cursorPosition);
+                  setInput(`${textBeforeCursor}\n${textAfterCursor}`);
+                  setTimeout(() => {
+                    textarea.selectionStart = textarea.selectionEnd =
+                      cursorPosition + 1;
+                  });
+                  e.preventDefault();
+                }
+              }}
+              className="pr-10 min-h-[40px] max-h-[200px] resize-none w-[91%] rounded-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
             <Button

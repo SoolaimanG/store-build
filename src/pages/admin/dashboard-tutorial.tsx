@@ -152,7 +152,6 @@ const DashboardTutorial = () => {
   };
 
   const watchTutorial = async () => {
-    // TODO: Implement logic to watch tutorial
     try {
       startTransition(true);
       const res = await storeBuilder.watchTutorial();
@@ -165,8 +164,6 @@ const DashboardTutorial = () => {
       } else {
         n(PATHS.STORE_TUTORIAL + res.data);
       }
-
-      console.log(res);
     } catch (error) {
       const { message: description } = errorMessageAndStatus(error);
       toast({

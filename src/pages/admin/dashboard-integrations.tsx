@@ -23,6 +23,8 @@ import { useToastError } from "@/hooks/use-toast-error";
 import ConnectAppBtn from "@/components/connect-app-btn";
 import { Link } from "react-router-dom";
 import { PATHS } from "@/types";
+import ChatbotSubscriptionModal from "@/components/chatbot-subcribe-modal";
+import { useStoreBuildState } from "@/store";
 
 const integrations = [
   {
@@ -65,6 +67,7 @@ const integrations = [
 ];
 
 export default function DashboardIntegrations() {
+  const userBalance = useStoreBuildState()?.user?.balance || 0;
   const { data, isLoading, error } = useQuery({
     queryKey: ["integrations"],
     queryFn: () => storeBuilder.getIntegrations(),
@@ -157,6 +160,16 @@ export default function DashboardIntegrations() {
                           Manage Integration
                         </Button>
                       </ManageIntegration>
+                    ) : integration.id === "chatbot" ? (
+                      <ChatbotSubscriptionModal
+                        onDismiss={() => {}}
+                        onSubscribe={() => {}}
+                        userBalance={userBalance}
+                      >
+                        <Button variant="ringHover" className="w-full">
+                          Connect {integration.name}
+                        </Button>
+                      </ChatbotSubscriptionModal>
                     ) : (
                       <ConnectAppBtn integrationId={integration.id}>
                         <Button

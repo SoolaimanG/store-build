@@ -24,7 +24,10 @@ const CouponCard: FC<ICoupon> = (coupon) => {
   const queryClient = useQueryClient();
 
   const getUsageCount = (customerUsage?: Record<string, number>) => {
-    if (!customerUsage) return 0;
+    if (!customerUsage) {
+       return 0;
+    };
+    
     return Object.values(customerUsage).reduce((sum, count) => sum + count, 0);
   };
 
