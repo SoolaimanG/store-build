@@ -48,7 +48,7 @@ const StoreOrderIsPlaced: FC<{
       <div className="w-full space-y-6">
         <div className="flex flex-col items-center text-center space-y-3">
           <CheckCircle2
-            style={{ color: store?.customizations?.theme.primary }}
+            style={{ color: store?.customizations?.theme?.primary }}
             size={70}
           />
           <h1 className="text-xl font-semibold">Your order is made!</h1>
@@ -60,11 +60,11 @@ const StoreOrderIsPlaced: FC<{
 
         <div className="space-y-4">
           <div
-            style={{ borderColor: store?.customizations?.theme.secondary }}
+            style={{ borderColor: store?.customizations?.theme?.secondary }}
             className="flex items-center gap-2 p-3 rounded-lg border"
           >
             <Truck
-              style={{ color: store?.customizations?.theme.primary }}
+              style={{ color: store?.customizations?.theme?.primary }}
               className="w-5 h-5 text-blue-600"
             />
             <div>
@@ -119,7 +119,7 @@ const StoreOrderIsPlaced: FC<{
 
         <div className="space-y-3">
           <Button
-            style={{ background: store?.customizations?.theme.primary }}
+            style={{ background: store?.customizations?.theme?.primary }}
             variant="secondary"
             className="w-full"
             asChild
@@ -131,9 +131,9 @@ const StoreOrderIsPlaced: FC<{
           {closeButton(
             <Button
               style={{
-                borderColor: store?.customizations?.theme.primary,
+                borderColor: store?.customizations?.theme?.primary,
                 background: isHovered
-                  ? store?.customizations?.theme.primary
+                  ? store?.customizations?.theme?.primary
                   : "",
               }}
               variant="outline"

@@ -26,20 +26,66 @@ import {
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { useQuery } from "@tanstack/react-query";
-import { storeBuilder } from "@/lib/utils";
+import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
+import { useToastError } from "@/hooks/use-toast-error";
+import { Text } from "./text";
+import { toast } from "@/hooks/use-toast";
 
 export default function AddBankAccount({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width:767px)");
-
-  const { isLoading, data, error } = useQuery({
-    queryKey: ["getBanks"],
-    queryFn: () => storeBuilder.getBanks(),
+  const [isPending, startTransition] = useState(false);
+  const [data, setData] = useState({
+    accountNumber: "",
+    nin: "",
+    bankCode: "",
+    bankName: "",
   });
 
-  console.log({ isLoading, data, error });
+  const {
+    isLoading,
+    data: banks = [],
+    error,
+  } = useQuery({
+    queryKey: ["getBanks"],
+    queryFn: () => storeBuilder.listBank(),
+  });
 
-  const AccountForm = () => (
+  const { isLoading: verifyingAccountNumber, data: account } = useQuery({
+    queryKey: [data.accountNumber, data.bankCode],
+    queryFn: () =>
+      storeBuilder.verifyAccountNumber(data.bankCode, data.accountNumber),
+    enabled: Boolean(data.bankCode && data.accountNumber.length >= 10),
+  });
+
+  const addBankAccount = async () => {
+    startTransition(true);
+    try {
+      const res = await storeBuilder.addBankAccount(
+        data.accountNumber,
+        data.nin,
+        data.bankCode,
+        data.bankName
+      );
+
+      toast({
+        title: "SUCCESS",
+        description: res.message,
+      });
+    } catch (error) {
+      toast({
+        title: "ERROR",
+        description: errorMessageAndStatus(error).message,
+        variant: "destructive",
+      });
+    } finally {
+      startTransition(false);
+    }
+  };
+
+  useToastError(error);
+
+  const accountForm = (
     <div className="flex flex-col gap-6 w-full">
       <h2 className="text-2xl font-bold">
         Enter your account number to continue
@@ -55,15 +101,23 @@ export default function AddBankAccount({ children }: { children: ReactNode }) {
         <Label htmlFor="bank-name" className="text-xs text-gray-500 uppercase">
           Bank Name
         </Label>
-        <Select defaultValue="9payment">
+        <Select
+          disabled={isLoading}
+          value={data.bankCode}
+          onValueChange={(e) => {
+            const [code, name] = e.split("-");
+            setData({ ...data, bankCode: code, bankName: name });
+          }}
+        >
           <SelectTrigger id="bank-name" className="w-full">
             <SelectValue placeholder="Select bank" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="9payment">9 payment service Bank</SelectItem>
-            <SelectItem value="access">Access Bank</SelectItem>
-            <SelectItem value="gtb">GTBank</SelectItem>
-            <SelectItem value="zenith">Zenith Bank</SelectItem>
+            {banks.map((bank) => (
+              <SelectItem key={bank.id} value={bank.code + "-" + bank.name}>
+                {bank.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -76,18 +130,32 @@ export default function AddBankAccount({ children }: { children: ReactNode }) {
           id="account-number"
           placeholder="Enter account number"
           className="w-full"
+          value={data.accountNumber}
+          onChange={(e) => setData({ ...data, accountNumber: e.target.value })}
         />
+        {account && <Text>{account.data.account_name}</Text>}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="nin" className="sr-only">
           NIN (National Identification Number)
         </Label>
-        <Input id="nin" placeholder="Enter NIN number" className="w-full" />
+        <Input
+          value={data.nin}
+          onChange={(e) => setData({ ...data, nin: e.target.value })}
+          id="nin"
+          placeholder="Enter NIN number"
+          className="w-full"
+        />
       </div>
 
-      <Button variant="ringHover" className="w-full text-white">
-        VERIFY ACCOUNT
+      <Button
+        disabled={verifyingAccountNumber || isPending}
+        onClick={addBankAccount}
+        variant="ringHover"
+        className="w-full text-white"
+      >
+        ADD ACCOUNT
       </Button>
     </div>
   );
@@ -104,9 +172,7 @@ export default function AddBankAccount({ children }: { children: ReactNode }) {
               </DrawerTitle>
             </div>
           </DrawerHeader>
-          <div className="p-6">
-            <AccountForm />
-          </div>
+          <div className="p-6">{accountForm}</div>
         </DrawerContent>
       </Drawer>
     );
@@ -123,9 +189,7 @@ export default function AddBankAccount({ children }: { children: ReactNode }) {
             </DialogTitle>
           </div>
         </DialogHeader>
-        <div className="py-4">
-          <AccountForm />
-        </div>
+        <div className="py-4">{accountForm}</div>
       </DialogContent>
     </Dialog>
   );

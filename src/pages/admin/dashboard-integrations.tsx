@@ -25,6 +25,7 @@ import { Link } from "react-router-dom";
 import { PATHS } from "@/types";
 import ChatbotSubscriptionModal from "@/components/chatbot-subcribe-modal";
 import { useStoreBuildState } from "@/store";
+import { useDocumentTitle } from "@uidotdev/usehooks";
 
 const integrations = [
   {
@@ -76,6 +77,8 @@ export default function DashboardIntegrations() {
   const { data: i } = data || {};
 
   useToastError(error);
+
+  useDocumentTitle("Integrations");
 
   const _integrations = integrations?.map((integration) => ({
     ...integration,

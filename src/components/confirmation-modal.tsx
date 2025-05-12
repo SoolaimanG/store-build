@@ -18,6 +18,8 @@ interface ConfirmationModalProps {
   message?: string;
   title?: string;
   children?: ReactNode;
+  btnText?: string;
+  btnVariant?: "destructive" | "outline" | "default";
 }
 
 export function ConfirmationModal({
@@ -27,6 +29,8 @@ export function ConfirmationModal({
   message = "Are you sure you want to delete the product? This action cannot be undone.",
   title = "Delete",
   children = <div />,
+  btnText = "Delete",
+  btnVariant = "destructive",
 }: ConfirmationModalProps) {
   const [open, setOpen] = useState(isOpen);
 
@@ -53,9 +57,9 @@ export function ConfirmationModal({
               onConfirm();
               setOpen(false);
             }}
-            variant="destructive"
+            variant={btnVariant}
           >
-            Delete
+            {btnText}
           </Button>
         </DialogFooter>
       </DialogContent>

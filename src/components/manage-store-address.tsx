@@ -261,10 +261,10 @@ export function AddressForm({
             onMouseEnter={() => setIsHovered(1)}
             style={{
               borderColor: useStoreTheme
-                ? store?.customizations?.theme.primary
+                ? store?.customizations?.theme?.primary
                 : "",
               background:
-                isHovered === 1 ? store?.customizations?.theme.primary : "",
+                isHovered === 1 ? store?.customizations?.theme?.primary : "",
             }}
             type="button"
             variant="outline"
@@ -275,7 +275,7 @@ export function AddressForm({
           <Button
             style={{
               background: useStoreTheme
-                ? store?.customizations?.theme.primary
+                ? store?.customizations?.theme?.primary
                 : "",
             }}
             type="submit"

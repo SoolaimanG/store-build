@@ -57,7 +57,7 @@ export const StoreFeaturesOne: FC<IStoreFeatureProps> = ({ features }) => {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <div
-                style={{ color: currentStore?.customizations?.theme.primary }}
+                style={{ color: currentStore?.customizations?.theme?.primary }}
                 className="text-sm font-medium text-primary"
               >
                 FEATURES
@@ -116,7 +116,7 @@ export const StoreFeaturesTwo: FC<IStoreFeatureProps> = ({ features }) => {
       >
         <div className="flex flex-col items-center text-center space-y-4">
           <div
-            style={{ color: currentStore?.customizations?.theme.primary }}
+            style={{ color: currentStore?.customizations?.theme?.primary }}
             className="text-sm font-medium text-primary"
           >
             FEATURES
@@ -153,7 +153,7 @@ export const StoreFeatureThree: FC<IStoreFeatureProps> = ({ features }) => {
       >
         <div className="flex flex-col items-center text-center space-y-4">
           <div
-            style={{ color: currentStore?.customizations?.theme.primary }}
+            style={{ color: currentStore?.customizations?.theme?.primary }}
             className="text-sm font-medium text-primary"
           >
             FEATURES

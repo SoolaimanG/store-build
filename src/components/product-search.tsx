@@ -63,7 +63,7 @@ export function ProductSearchDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle style={{ color: customizations?.theme.primary }}>
+          <DialogTitle style={{ color: customizations?.theme?.primary }}>
             Search Products
           </DialogTitle>
         </DialogHeader>

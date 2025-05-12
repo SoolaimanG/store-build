@@ -97,9 +97,9 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
               onMouseLeave={() => setIsHovered(0)}
               onMouseEnter={() => setIsHovered(1)}
               style={{
-                borderColor: store?.customizations?.theme.primary,
+                borderColor: store?.customizations?.theme?.primary,
                 background:
-                  isHovered === 1 ? store?.customizations?.theme.primary : "",
+                  isHovered === 1 ? store?.customizations?.theme?.primary : "",
               }}
               size="sm"
               type="button"
@@ -126,9 +126,9 @@ const ProductCardWithQuantityIncrementation: FC<ProductQuantityProps> = ({
               onMouseLeave={() => setIsHovered(0)}
               onMouseEnter={() => setIsHovered(2)}
               style={{
-                borderColor: store?.customizations?.theme.primary,
+                borderColor: store?.customizations?.theme?.primary,
                 background:
-                  isHovered === 2 ? store?.customizations?.theme.primary : "",
+                  isHovered === 2 ? store?.customizations?.theme?.primary : "",
               }}
               size="sm"
               onClick={() =>

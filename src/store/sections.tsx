@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import GridDisplay from "./grid-display";
+import { EmptyProductState } from "@/components/empty";
+import { Package } from "lucide-react";
 
 export const EachSection: FC<ISection & { storeId: string }> = ({
   products,
@@ -23,6 +25,7 @@ export const EachSection: FC<ISection & { storeId: string }> = ({
   header,
   display,
 }) => {
+  const { currentStore: store } = useStoreBuildState();
   const { isLoading, data, error } = useQuery({
     queryKey: ["products", storeId],
     queryFn: () =>
@@ -35,7 +38,18 @@ export const EachSection: FC<ISection & { storeId: string }> = ({
 
   useToastError(error);
 
-  if (!_products?.length && !isLoading) return null;
+  if (!_products?.length && !isLoading)
+    return (
+      <EmptyProductState
+        icon={Package}
+        header="No Product Found"
+        message="Seems like this store does not have any active product available, Please contact the store owner"
+      >
+        <Button style={{ background: store?.customizations?.theme?.primary }}>
+          Contact Store Owner
+        </Button>
+      </EmptyProductState>
+    );
 
   const seeMoreBtn = (display: IDisplay, isVisible: boolean) => (
     <Button
@@ -63,7 +77,7 @@ export const EachSection: FC<ISection & { storeId: string }> = ({
           : _products?.map((product) => (
               <CarouselItem
                 key={product._id}
-                className="md:basis-1/2 lg:basis-1/3 basis-3/5"
+                className="md:basis-1/2 lg:basis-1/3 basis-5/5"
               >
                 <ProductCard {...product} />
               </CarouselItem>

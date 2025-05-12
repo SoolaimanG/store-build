@@ -194,9 +194,9 @@ const OrderDetails: FC<
           <div className="flex gap-3 md:mt-0 mt-3">
             <Button
               style={{
-                borderColor: store?.customizations?.theme.primary,
+                borderColor: store?.customizations?.theme?.primary,
                 background:
-                  isHovered === 1 ? store?.customizations?.theme.primary : "",
+                  isHovered === 1 ? store?.customizations?.theme?.primary : "",
               }}
               size="sm"
               variant="outline"
@@ -214,7 +214,7 @@ const OrderDetails: FC<
             {Boolean(shippingDetails?.trackingNumber) &&
               shippingDetails.carrier === "SENDBOX" && (
                 <Button
-                  style={{ background: store?.customizations?.theme.primary }}
+                  style={{ background: store?.customizations?.theme?.primary }}
                   size="sm"
                   asChild
                 >
@@ -381,7 +381,9 @@ const OrderDetails: FC<
                   <div className="text-sm font-medium">Order Status</div>
                   <Badge
                     className="w-fit rounded-md"
-                    style={{ background: store?.customizations?.theme.primary }}
+                    style={{
+                      background: store?.customizations?.theme?.primary,
+                    }}
                   >
                     {order.orderStatus}
                   </Badge>
@@ -426,7 +428,9 @@ const OrderDetails: FC<
                   <Button
                     onClick={completeOrderPayment}
                     className="gap-2 items-center"
-                    style={{ background: store?.customizations?.theme.primary }}
+                    style={{
+                      background: store?.customizations?.theme?.primary,
+                    }}
                     size="sm"
                   >
                     {isPending ? (

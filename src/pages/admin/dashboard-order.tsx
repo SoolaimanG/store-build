@@ -1,8 +1,12 @@
+"use client";
+
 import * as React from "react";
 import {
   ArrowDown,
   ArrowUp,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   LogInIcon as Logs,
   PackageSearch,
   Plus,
@@ -39,7 +43,6 @@ import {
   generateRandomString,
   storeBuilder,
 } from "@/lib/utils";
-import { PaginationFooter } from "@/components/pagination-footer";
 import queryString from "query-string";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -51,7 +54,7 @@ import { OrderStats } from "@/components/order-stats";
 import { Text } from "@/components/text";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { DatePickerWithRange } from "@/components/ui/range-date-picker";
-import { DateRange } from "react-day-picker";
+import type { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
 import { useStoreBuildState } from "@/store";
 
@@ -100,6 +103,7 @@ export default function DashboardOrders() {
   const {
     filter = "All",
     page = 1,
+    limit = 10,
     asc = true,
   } = queryString.parse(location.search, {
     parseNumbers: true,
@@ -107,8 +111,11 @@ export default function DashboardOrders() {
   }) as {
     filter: IOrderStatus | "All";
     page?: number;
+    limit?: number;
     asc?: boolean;
   };
+
+  console.log({ page, limit });
 
   React.useEffect(() => {
     if (!user?.createdAt) return;
@@ -129,23 +136,35 @@ export default function DashboardOrders() {
     n("?" + addQueryParameter("filter", newFilter));
   };
 
+  // Update the onPageChange function to ensure it correctly updates the URL and triggers a refetch
+  const onPageChange = (newPage: number) => {
+    // Update the URL with the new page number
+    const newSearch = addQueryParameter("page", newPage.toString());
+
+    // Use navigate instead of n to ensure a full navigation
+    n(`?${newSearch}`);
+  };
+
   const { isLoading, data, error } = useQuery({
-    queryKey: ["orders", searchQuery, date, filter, asc, page, sorts],
+    queryKey: ["orders", searchQuery, date, filter, asc, page, limit, sorts],
     queryFn: () =>
       storeBuilder.getOrders(
         searchQuery,
-        0,
-        10 * page,
         asc,
         filter,
         date?.from?.toISOString(),
         date?.to?.toISOString(),
-        sorts.join(",")
+        sorts.join(","),
+        page,
+        limit
       ),
     enabled: Boolean(user?.createdAt),
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
   const { data: order } = data || {};
+  const pagination = order?.pagination;
 
   const filters: {
     label: IOrderStatus | "All";
@@ -350,20 +369,12 @@ export default function DashboardOrders() {
                     <TableHead>Items</TableHead>
                     {!isMobile && <TableHead>Delivery number</TableHead>}
                     <TableHead>Order status</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {order?.orders?.map((order) => (
-                    <TableRow
-                      onClick={() =>
-                        n(PATHS.STORE_ORDERS + order._id, {
-                          viewTransition: true,
-                          flushSync: false,
-                        })
-                      }
-                      key={order._id}
-                      className="hover:bg-muted/50"
-                    >
+                    <TableRow key={order._id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         #{order._id}
                       </TableCell>
@@ -413,6 +424,19 @@ export default function DashboardOrders() {
                           {order.orderStatus}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Button variant="secondary" size="sm">
+                          <Link
+                            to={
+                              PATHS.STORE_ORDERS +
+                              order._id +
+                              `?phoneNumber=${order.customerDetails.phoneNumber}`
+                            }
+                          >
+                            View
+                          </Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -440,8 +464,77 @@ export default function DashboardOrders() {
         )}
       </motion.div>
 
-      {order?.orders && order.orders.length > 0 && !isLoading && (
-        <PaginationFooter />
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+            {Math.min(
+              pagination.page * pagination.limit,
+              pagination.totalItems
+            )}{" "}
+            of {pagination.totalItems} orders
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrevPage}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Previous Page</span>
+            </Button>
+            {Array.from(
+              { length: Math.min(5, pagination.totalPages) },
+              (_, i) => {
+                // Show pages around current page
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else {
+                  const start = Math.max(1, pagination.page - 2);
+                  const end = Math.min(
+                    pagination.totalPages,
+                    pagination.page + 2
+                  );
+                  if (end - start < 4) {
+                    if (start === 1) {
+                      pageNum = i + 1;
+                    } else {
+                      pageNum = pagination.totalPages - 4 + i;
+                    }
+                  } else {
+                    pageNum = start + i;
+                  }
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={
+                      pageNum === pagination.page ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => onPageChange(pageNum)}
+                    className="w-9 h-9"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              }
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.page + 1)}
+              disabled={!pagination.hasNextPage}
+            >
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Next Page</span>
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

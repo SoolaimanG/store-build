@@ -7,8 +7,11 @@ import {
   chargeResponse,
   Customer,
   CustomersResponse,
+  FlutterwaveResponse,
+  FlutterwaveVirtualAccountResponse,
   getProductsTypes,
   IAvailableColors,
+  IBank,
   ICategory,
   IChatBotIntegration,
   ICheckFor,
@@ -16,13 +19,17 @@ import {
   ICustomerAddress,
   ICustomerStats,
   IDashboardMetrics,
+  IDedicatedAccount,
   IDeliveryCostPayload,
   IDeliveryIntegration,
+  IIntegration,
   IIntegrationType,
   IJoinNewsLetterFrom,
+  Invoice,
   IOrder,
   IOrderStatus,
   IOTPFor,
+  IPaymentFor,
   IPaymentIntegration,
   IProduct,
   IProductAnalytics,
@@ -30,9 +37,12 @@ import {
   IProductTypes,
   IRating,
   IStore,
+  IStoreBankAccounts,
   IStoreTheme,
+  ITransaction,
   ITutorial,
   IUser,
+  PATHS,
   ShipmentResponse,
 } from "@/types";
 import qs from "query-string";
@@ -55,7 +65,7 @@ export const api = axios.create({
 });
 
 export const errorMessageAndStatus = (error: any) => {
-  const message = error?.response?.data?.message;
+  const message = error?.response?.data?.message || "Something went wrong";
   const status = error?.response?.data?.status?.toUpperCase();
   const data = error?.response?.data?.data;
   const code = error?.response?.data?.code;
@@ -211,11 +221,17 @@ export class StoreBuild {
     return res.data;
   }
 
-  async verifyAccountNumber(accountBank: string, accountNumber: string) {
-    const q = queryString.stringify({ accountBank, accountNumber });
-    const res: { data: apiResponse } = await api.get(
-      `/verify-account-number/?${q}`
-    );
+  async verifyAccountNumber(bankCode: string, accountNumber: string) {
+    const q = queryString.stringify({ bankCode, accountNumber });
+    const res = await api.get<
+      apiResponse<{
+        account_number: string;
+        account_name: string;
+        bank_id: number;
+      }>
+    >(`/verify-account-number/?${q}`, {
+      headers: { Authorization: this.getSessionToken },
+    });
 
     return res.data;
   }
@@ -235,29 +251,37 @@ export class StoreBuild {
 
   async getOrders(
     q?: string,
-    start?: number,
-    end?: number,
     asc = false,
     filter: IOrderStatus | "All" = "All",
     startDate?: string,
     endDate?: string,
-    sort?: string
+    sort?: string,
+    page?: number,
+    limit?: number
   ) {
     const _q = queryString.stringify({
       q,
-      start,
-      end,
       asc,
       filter,
       startDate,
       endDate,
       sort,
+      page,
+      limit,
     });
 
     const res: {
       data: apiResponse<{
         orders: IOrder[];
-        orderStatusCount: Record<IOrderStatus | "All", number>;
+        orderStatusCount: Record<string, number>;
+        pagination: {
+          page: number;
+          limit: number;
+          totalItems: number;
+          totalPages: number;
+          hasNextPage: boolean;
+          hasPrevPage: boolean;
+        };
       }>;
     } = await api.get(`/get-orders/?${_q}`, {
       headers: { Authorization: this.getSessionToken },
@@ -268,7 +292,7 @@ export class StoreBuild {
 
   async signOut() {
     this.removeSessionToken();
-    window.location.reload();
+    window.location.replace(PATHS.SIGNIN);
   }
 
   async createOrEditProduct(product: IProduct) {
@@ -375,6 +399,7 @@ export class StoreBuild {
           name: string;
           _id?: string;
         };
+        hasApiKeys?: boolean;
       }>;
     } = await api.get(`/get-integrations/${integrationId}`, {
       headers: { Authorization: this.getSessionToken },
@@ -432,7 +457,7 @@ export class StoreBuild {
   }
 
   async getProduct(productId: string) {
-    const res: { data: apiResponse<IProduct> } = await api.get(
+    const res = await api.get<apiResponse<IProduct>>(
       `/get-products/${productId}/`,
       { headers: { Authorization: this.getSessionToken } }
     );
@@ -443,23 +468,21 @@ export class StoreBuild {
   async createOrder(
     order: Partial<IOrder>,
     storeId?: string,
-    couponCode?: string
+    couponCode?: string,
+    paymentOption?: "flutterwave" | "manual"
   ) {
     const res: { data: apiResponse<IOrder> } = await api.post(
       `/create-order/`,
-      { order, storeId, couponCode },
+      { order, storeId, couponCode, paymentOption },
       { headers: { Authorization: this.getSessionToken } }
     );
     return res.data;
   }
 
-  async getOrder<T = any>(orderId: string, storeId?: string) {
-    const q = queryString.stringify({ storeId });
+  async getOrder<T = any>(orderId: string, phoneNumber?: string) {
+    const q = queryString.stringify({ phoneNumber });
     const res: { data: apiResponse<T> } = await api.get(
-      `/get-orders/${orderId}/?${q}`,
-      {
-        headers: { Authorization: this.getSessionToken },
-      }
+      `/get-orders/${orderId}/?${q}`
     );
 
     return res.data;
@@ -476,20 +499,24 @@ export class StoreBuild {
     return res.data;
   }
 
-  async sendQuickEmail(emailId: string, orderId: string) {
+  async sendQuickEmail(emailId: string, orderId: string, phoneNumber: string) {
     const res: { data: apiResponse } = await api.post(
       `/send-quick-email/${emailId}/`,
-      { orderId },
+      { orderId, phoneNumber },
       { headers: { Authorization: this.getSessionToken } }
     );
 
     return res.data;
   }
 
-  async editOrder(orderId: string, updates: Partial<IOrder>, partial = false) {
+  async editOrder(
+    orderId: string,
+    updates: Partial<IOrder>,
+    phoneNumber?: string
+  ) {
     const res: { data: apiResponse<IOrder> } = await api.patch(
       `/edit-order/${orderId}/`,
-      { updates, partial },
+      { updates, phoneNumber },
       { headers: { Authorization: this.getSessionToken } }
     );
 
@@ -668,8 +695,11 @@ export class StoreBuild {
     return res.data;
   }
 
-  async requestCancelOrder(orderId: string, storeId: string) {
-    const q = queryString.stringify({ storeId });
+  async requestCancelOrder(
+    orderId: string,
+    payload: { storeId: string; phoneNumber: string; reason?: string }
+  ) {
+    const q = queryString.stringify(payload);
     const res: { data: apiResponse } = await api.get(
       `/request-cancel-order/${orderId}/?${q}`
     );
@@ -867,11 +897,12 @@ export class StoreBuild {
 
     if (!aiSessionId) {
       now.setMinutes(now.getMinutes() + 20);
-      const session = Cookie.set("ai-session-id", generateRandomString(20), {
+      const randomToken = generateRandomString(20);
+      Cookie.set("ai-session-id", randomToken, {
         expires: now,
       });
 
-      return session;
+      return randomToken;
     }
 
     return aiSessionId;
@@ -879,7 +910,7 @@ export class StoreBuild {
 
   async subscribeToChatBot() {
     const res: { data: apiResponse } = await api.post(
-      "/subscribe-to-chat-bot/",
+      "/subcribe-to-chat-bot/",
       undefined,
       { headers: { Authorization: this.getSessionToken } }
     );
@@ -902,7 +933,281 @@ export class StoreBuild {
 
     return res.data;
   }
+
+  async getStoreBank(storeCode: string, getDefault = false, size = 5) {
+    const q = queryString.stringify({ getDefault, storeCode, size });
+
+    const res = await api.get<apiResponse<IStoreBankAccounts[]>>(
+      `/get-store-bank/?${q}`,
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async getInvoice(id: string) {
+    const res = await api.get<apiResponse<Invoice>>(`/get-invoice/${id}/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async payWithBankTransfer(
+    id: string,
+    paymentFor: "order" | "store-build-ai" | "subscription"
+  ) {
+    const res = await api.post<apiResponse<FlutterwaveVirtualAccountResponse>>(
+      `/pay-with-bank-account/`,
+      {
+        id,
+        paymentFor,
+      }
+    );
+
+    return res.data;
+  }
+
+  async addsendBoxApiKey(accessKey: string) {
+    const res = await api.post<apiResponse<IIntegration>>(
+      `/add-send-box-api-key/`,
+      { accessKey },
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async deleteSendBoxApiKey() {
+    const res = await api.delete<apiResponse>(`/delete-send-box-api-keys/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async payWithFlutterwave(orderId: string, paymentFor: IPaymentFor = "order") {
+    const res = await api.post<apiResponse<FlutterwaveResponse>>(
+      `/pay-with-flutterwave/${orderId}`,
+      { paymentFor },
+      {
+        headers: {
+          Authorization: this.getSessionToken,
+        },
+      }
+    );
+
+    return res.data;
+  }
+
+  async listBank() {
+    const res = await api.get<apiResponse<IBank[]>>(`/get-banks/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data.data;
+  }
+
+  async addBankAccount(
+    accountNumber: string,
+    nin: string,
+    bankCode: string,
+    bankName: string
+  ) {
+    const res = await api.post<apiResponse>(
+      `/add-bank-account/`,
+      { accountNumber, nin, bankCode, bankName },
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getProductsDrafts() {
+    const res = await api.get<apiResponse<IProduct[]>>(
+      `/get-products-drafts/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data.data;
+  }
+
+  async getDedicatedAccount() {
+    const res = await api.get<apiResponse<IDedicatedAccount>>(
+      `/get-dedicated-account/`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data.data;
+  }
+
+  async createDedicatedAccount() {
+    const res = await api.post<apiResponse>(
+      `/create-dedicated-account/`,
+      undefined,
+      {
+        headers: { Authorization: this.getSessionToken },
+      }
+    );
+
+    return res.data;
+  }
+
+  async createCharge(payload: {
+    id?: string;
+    paymentFor: IPaymentFor;
+    paymentOption: "virtualAccount" | "card" | "balance";
+    storeCode?: string;
+    meta?: any;
+  }) {
+    interface IRes {
+      email: string;
+      name: string;
+      amount: number;
+      phoneNumber: string;
+      paymentChannel: string;
+      paymentLink: string;
+      virtualAccount?: FlutterwaveVirtualAccountResponse;
+    }
+
+    const res = await api.post<apiResponse<IRes>>(`/create-charge/`, payload, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async validatePayment(
+    status: string,
+    tx_ref: string,
+    transaction_id?: string,
+    storeId?: string
+  ) {
+    const q = queryString.stringify({
+      status,
+      tx_ref,
+      transaction_id,
+      storeId,
+    });
+
+    const res = await api.get<apiResponse>(
+      `/validate-flutter-wave-payment/?${q}`
+    );
+
+    return res.data;
+  }
+
+  async requestWithdraw(payload: {
+    amount: number;
+    accountId: string;
+    otp: string;
+  }) {
+    const res = await api.post<apiResponse>(`/request-withdraw/`, payload, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
+
+  async getInternalTransactions(payload?: { size?: number; skip?: number }) {
+    interface IRes {
+      transactions: ITransaction[];
+      totalTransactions: number;
+    }
+
+    const q = queryString.stringify({
+      ...payload,
+    });
+    const res = await api.get<apiResponse<IRes>>(
+      `/get-internal-transaction/?${q}`,
+      { headers: { Authorization: this.getSessionToken } }
+    );
+
+    return res.data;
+  }
+
+  async getAiSuggestion() {
+    interface IRes {
+      title: string;
+      description: string;
+      action: String;
+    }
+
+    const res = await api.get<apiResponse<IRes[]>>(`/get-ai-suggestion/`, {
+      headers: { Authorization: this.getSessionToken },
+    });
+
+    return res.data;
+  }
 }
+
+export function generateWhatsAppOrderMessage({
+  phone,
+  itemDetails,
+  customerName,
+  deliveryMethod,
+  totalPrice,
+  orderLink,
+  paymentOptions,
+  orderId,
+}: {
+  phone: string;
+  itemDetails: string;
+  customerName: string;
+  deliveryMethod: string;
+  totalPrice: string;
+  orderLink: string;
+  paymentOptions: {
+    bankAccount: {
+      accountNumber: string;
+      bankName: string;
+      accountName: string;
+    };
+  };
+  orderId: string;
+}): string {
+  const message = `
+Hi, I'll like to buy these items:
+
+📦 ${itemDetails}
+
+🙇🏽‍♂️ Customer: ${customerName}
+
+*Delivery Method:* ${deliveryMethod}
+
+💰 Total Price: *${totalPrice}*
+
+🛍️ Click here to update the order or make payments:
+${orderLink}
+
+-----------------------------------
+*FOR PAYMENTS*
+
+*OPTION 1:* Use the link attached to this order 🔗
+Payments made via the link are automatically confirmed.
+
+*OPTION 2:* Transfer to this bank account 🏦
+Acc Num: ${paymentOptions.bankAccount.accountNumber}
+Bank: ${paymentOptions.bankAccount.bankName}
+Acc Name: ${paymentOptions.bankAccount.accountName}
+-----------------------------------
+
+Order ID: *${orderId}*
+  `;
+
+  const encodedMessage = encodeURIComponent(message.trim());
+  return `https://api.whatsapp.com/send/?phone=${phone}&text=${encodedMessage}`;
+}
+
+export const goToWhatsapp = (phoneNumber: string, message: string) => {
+  const encodedMessage = encodeURIComponent(message.trim());
+  const link = `https://api.whatsapp.com/send/?phone=${phoneNumber}&text=${encodedMessage}`;
+  window.open(link, "_blank");
+};
 
 export function formatTextToHTML(text: string) {
   // Split the text by the numbered list
@@ -979,8 +1284,9 @@ export const doesAllCategoriesHasImage = (categories: ICategory[]) => {
   return categories.every((category) => Boolean(category.img));
 };
 
-export const allProductsAreDigital = (products: IProduct[] = []) =>
-  products.every((product) => product?.isDigital);
+export const allProductsAreDigital = (products: IProduct[] = []) => {
+  return products.every((product) => product?.isDigital);
+};
 
 export const sumUpValues = <T = any[]>(data: T, key: string) => {
   // @ts-ignore
@@ -1077,12 +1383,18 @@ export const getOrderProductCount = (
   }, 0);
 };
 
-export function formatAmountToNaira(amount: number) {
-  return new Intl.NumberFormat("en-NG", {
-    currency: "NGN",
-    style: "currency",
-    minimumFractionDigits: 2,
-  }).format(amount);
+export function formatAmountToNaira(amount: number, mfd = 2) {
+  if (amount >= 1000000) {
+    return `₦${(amount / 1000000).toFixed(mfd)}m`;
+  } else if (amount >= 1000) {
+    return `₦${(amount / 1000).toFixed(mfd)}k`;
+  } else {
+    return new Intl.NumberFormat("en-NG", {
+      currency: "NGN",
+      style: "currency",
+      minimumFractionDigits: mfd,
+    }).format(amount);
+  }
 }
 
 export const storeBuilder = new StoreBuild();

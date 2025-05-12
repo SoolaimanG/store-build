@@ -41,29 +41,6 @@ export const landingPageNavBarLinks = [
   },
 ];
 
-export const dashboardPages = [
-  {
-    name: "Insights",
-    path: "",
-  },
-  {
-    name: "Inventories",
-    path: "",
-  },
-  {
-    name: "Orders",
-    path: "",
-  },
-  {
-    name: "Store Front",
-    path: "",
-  },
-  {
-    name: "Settings",
-    path: "",
-  },
-];
-
 export const nigeriaStates = [
   "Abia",
   "Adamawa",
@@ -477,7 +454,7 @@ export const menu = (
   },
   {
     name: "Track Order",
-    path: `/store/${storeCode}/track-order/`,
+    path: `/store/${storeCode}/track-order/${payload?.trackOrder || ""}`,
   },
 ];
 

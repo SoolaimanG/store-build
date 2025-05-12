@@ -34,7 +34,7 @@ const StoreAboutUs: FC<{ isOpen?: boolean }> = ({ isOpen = false }) => {
           <DialogClose>
             <Button
               style={{
-                background: currentStore?.customizations?.theme.primary,
+                background: currentStore?.customizations?.theme?.primary,
               }}
             >
               Close

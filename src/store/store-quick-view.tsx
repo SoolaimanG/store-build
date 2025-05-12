@@ -116,8 +116,8 @@ export function QuickProductView({
               {[...Array(5)].map((_, i) => (
                 <Star
                   style={{
-                    color: currentStore?.customizations?.theme.secondary,
-                    fill: currentStore?.customizations?.theme.secondary,
+                    color: currentStore?.customizations?.theme?.secondary,
+                    fill: currentStore?.customizations?.theme?.secondary,
                   }}
                   key={i}
                   className="h-5 w-5 fill-primary"
@@ -131,7 +131,7 @@ export function QuickProductView({
               {p.averageRating?.toFixed(2)}
             </span>
             <Button
-              style={{ color: currentStore?.customizations?.theme.primary }}
+              style={{ color: currentStore?.customizations?.theme?.primary }}
               variant="link"
               className="text-sm text-primary"
               asChild
@@ -153,7 +153,7 @@ export function QuickProductView({
                   style={{
                     borderColor:
                       c.name === color
-                        ? currentStore?.customizations?.theme.primary
+                        ? currentStore?.customizations?.theme?.primary
                         : "",
                   }}
                   key={idx}
@@ -224,14 +224,14 @@ export function QuickProductView({
           <Button
             onClick={addItemToCart}
             style={{
-              background: currentStore?.customizations?.theme.primary,
+              background: currentStore?.customizations?.theme?.primary,
             }}
             className="w-full bg-primary text-primary-foreground"
           >
             Add to bag
           </Button>
           <Button
-            style={{ color: currentStore?.customizations?.theme.secondary }}
+            style={{ color: currentStore?.customizations?.theme?.secondary }}
             variant="link"
             className="text-primary"
             asChild

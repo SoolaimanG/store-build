@@ -28,12 +28,14 @@ interface SendEmailProps {
   isDesktop: boolean;
   customerEmail?: string;
   orderId: string;
+  phoneNumber: string;
 }
 
 export function SendEmailButton({
   isDesktop,
   customerEmail = "",
   orderId,
+  ...props
 }: SendEmailProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -59,6 +61,7 @@ export function SendEmailButton({
           customerEmail={customerEmail}
           onClose={() => setIsOpen(false)}
           isOpen={isOpen}
+          phoneNumber={props.phoneNumber}
         />
       </ContentComponent>
     </ModalComponent>
@@ -70,11 +73,13 @@ function SendEmailForm({
   customerEmail,
   onClose,
   isOpen,
+  phoneNumber,
 }: {
   orderId: string;
   customerEmail: string;
   onClose: () => void;
   isOpen: boolean;
+  phoneNumber: string;
 }) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -93,7 +98,7 @@ function SendEmailForm({
   const sendQuickEmail = async (id: string) => {
     try {
       startTransition(true);
-      const res = await storeBuilder.sendQuickEmail(id, orderId);
+      const res = await storeBuilder.sendQuickEmail(id, orderId, phoneNumber);
 
       onClose();
 
@@ -124,7 +129,7 @@ function SendEmailForm({
 
   return (
     <form onSubmit={handleSubmit} className="p-4 md:p-0 overflow-hidden">
-      <div className="space-y-4 overflow-hidden">
+      <div className="space-y-4 overflow-hidden p-2">
         {isLoading ? (
           <div className="flex gap-3">
             {[1, 2, 3, 4, 5].map((_, idx) => (
@@ -162,7 +167,7 @@ function SendEmailForm({
             id="to"
             value={customerEmail}
             disabled
-            className="col-span-3"
+            className="col-span-3 h-[3rem]"
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -173,7 +178,7 @@ function SendEmailForm({
             id="subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="col-span-3"
+            className="col-span-3 h-[3rem]"
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -184,7 +189,7 @@ function SendEmailForm({
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="col-span-3"
+            className="col-span-3 "
             rows={5}
           />
         </div>

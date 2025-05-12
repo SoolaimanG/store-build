@@ -9,11 +9,12 @@ import { Link, useNavigate } from "react-router-dom";
 import Marquee from "./ui/marquee";
 import { templateShowCaseList } from "@/constants";
 import { useState } from "react";
-import { appConfig } from "@/lib/utils";
+import { appConfig, errorMessageAndStatus } from "@/lib/utils";
 import { useAuthentication } from "@/hooks/use-authentication";
-import { PATHS } from "@/types";
-import queryString from "query-string";
 import TemplateCard from "./template-card";
+import { toast } from "@/hooks/use-toast";
+import queryString from "query-string";
+import { PATHS } from "@/types";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -32,31 +33,28 @@ const stagger = {
 
 export const LandingPageHeroSection = () => {
   const [prompt, setPrompt] = useState("");
-  const { isAuthenticated } = useAuthentication(undefined, 10000);
+  const { isAuthenticated } = useAuthentication();
   const n = useNavigate();
 
   const onGenerate = () => {
-    if (!prompt) {
-      return;
-    }
-
-    // If the user is not loggin ensure that the user is logged in before performing request
-    if (!isAuthenticated) {
-      {
+    try {
+      if (!isAuthenticated) {
+        const q = queryString.stringify({ useAi: true, prompt });
+        n(PATHS.SIGNUP + `?${q}`);
+        return;
       }
-      const param = queryString.parse(location.search);
-      const q = queryString.stringify({
-        ...param,
-        useAi: encodeURIComponent(prompt),
-        redirectTo: location.href,
+
+      const q = queryString.stringify({ useAi: true, prompt });
+
+      n(PATHS.DASHBOARD + `?${q}`);
+    } catch (error) {
+      const { message } = errorMessageAndStatus(error);
+      toast({
+        title: "ERROR",
+        description: message,
+        variant: "destructive",
       });
-      n(`${PATHS.SIGNIN}?${q}`);
-      return;
     }
-
-    //TODO: Trigger a function to generate store with the AI
-
-    n(PATHS.DASHBOARD);
   };
 
   return (
@@ -103,6 +101,7 @@ export const LandingPageHeroSection = () => {
             <Button
               size="sm"
               variant="shine"
+              disabled={!prompt}
               onClick={onGenerate}
               className="rounded-full absolute right-2 top-2 mt-[0.1rem] gap-2"
             >

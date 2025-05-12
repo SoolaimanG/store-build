@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { IOrder } from "@/types";
+import { IDeliveryType, IOrder } from "@/types";
 import { useState } from "react";
 import { Label } from "./ui/label";
 import {
@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { toast } from "@/hooks/use-toast";
+import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 
 export function EditDelivery({
   onClose,
@@ -20,19 +22,39 @@ export function EditDelivery({
   orderData: IOrder;
   onClose: () => void;
 }) {
-  const [deliveryType, setDeliveryType] = useState(
-    order.shippingDetails.shippingMethod
+  const [deliveryType, setDeliveryType] = useState<IDeliveryType>(
+    order?.deliveryType
   );
-  const [carrier, setCarrier] = useState("SENDBOX");
+  const [carrier, setCarrier] = useState<"SENDBOX">("SENDBOX");
   const [trackingNo, setTrackingNo] = useState(
-    order.paymentDetails.tx_ref || ""
+    order?.shippingDetails?.trackingNumber || ""
   );
+  const [isPending, startTransition] = useState(false);
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-    // TODO: Implement update logic
-    console.log("Updating delivery info:", { carrier, trackingNo });
-    onClose();
+    startTransition(true);
+
+    try {
+      await storeBuilder.editOrder(_id, {
+        ...order,
+        shippingDetails: {
+          ...order.shippingDetails,
+          carrier,
+          trackingNumber: trackingNo,
+        },
+        deliveryType,
+      });
+    } catch (error) {
+      toast({
+        title: "ERROR",
+        description: errorMessageAndStatus(error).message,
+        variant: "destructive",
+      });
+    } finally {
+      startTransition(false);
+      onClose();
+    }
   };
 
   return (
@@ -46,17 +68,17 @@ export function EditDelivery({
             id="carrier"
             readOnly
             value={"SENDBOX"}
-            onChange={(e) => setCarrier(e.target.value)}
+            onChange={(e) => setCarrier(e.target.value as "SENDBOX")}
             className="col-span-3"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="speed" className="text-left">
+          <Label htmlFor="delivery-type" className="text-left">
             Delivery Type
           </Label>
           <Select
             value={deliveryType}
-            onValueChange={(e: "REGULAR" | "EXPRESS") => setDeliveryType(e)}
+            onValueChange={(e: IDeliveryType) => setDeliveryType(e)}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a delivery type" />
@@ -64,8 +86,9 @@ export function EditDelivery({
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Delivery Type</SelectLabel>
-                <SelectItem value="STANDARD">Standard</SelectItem>
-                <SelectItem value="EXPRESS">Express</SelectItem>
+                <SelectItem value="sendbox">Send Box</SelectItem>
+                <SelectItem value="pick_up">Pick Up</SelectItem>
+                <SelectItem value="waybill">Way Bill</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -83,8 +106,10 @@ export function EditDelivery({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <Button type="submit">Save changes</Button>
-        {order.shippingDetails.trackingNumber !== "pending" && (
+        <Button disabled={isPending} type="submit">
+          Save changes
+        </Button>
+        {order?.shippingDetails?.trackingNumber !== "pending" && (
           <Button variant="destructive">Cancel Delivery</Button>
         )}
       </div>

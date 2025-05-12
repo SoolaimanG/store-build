@@ -39,10 +39,10 @@ const QuantityIncrementation: FC<{
         onMouseEnter={() => setIsHovered(1)}
         style={{
           borderColor: useStoreColor
-            ? store?.customizations?.theme.primary
+            ? store?.customizations?.theme?.primary
             : "",
           background:
-            isHovered === 1 ? store?.customizations?.theme.primary : "",
+            isHovered === 1 ? store?.customizations?.theme?.primary : "",
         }}
         size="sm"
         onClick={() =>
@@ -71,9 +71,9 @@ const QuantityIncrementation: FC<{
         onMouseEnter={() => setIsHovered(2)}
         type="button"
         style={{
-          borderColor: store?.customizations?.theme.primary,
+          borderColor: store?.customizations?.theme?.primary,
           background:
-            isHovered === 2 ? store?.customizations?.theme.primary : "",
+            isHovered === 2 ? store?.customizations?.theme?.primary : "",
         }}
         size="sm"
         onClick={() =>

@@ -57,6 +57,7 @@ import {
   errorMessageAndStatus,
   formatAmountToNaira,
   getInitials,
+  getOrderProductCount,
   storeBuilder,
 } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +103,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useStoreBuildState } from "@/store";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
 
 interface CustomerTableProps {
   selectedCustomers: string[];
@@ -884,7 +886,11 @@ const CustomerDetails: FC<{ children: ReactNode; email: string }> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <CustomerPaymentDetails isLoading={isLoading} />
+                        <EmptyProductState
+                          message="No payment method found"
+                          header="No Payment Method"
+                          icon={CreditCard}
+                        />
                       </motion.div>
                     </TabsContent>
                     <TabsContent value="orders">
@@ -958,7 +964,7 @@ const CustomerTransactionDetails: FC<{
             </div>
             <div className="flex justify-between items-center text-sm">
               <span>Order Id</span>
-              <span className="font-mono">{order._id}</span>
+              <span className="font-mono truncate">{order._id}</span>
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">Billing Address</h4>
@@ -977,56 +983,11 @@ const CustomerTransactionDetails: FC<{
         ))
       )}
       <CardFooter>
-        <Button variant="outline" className="w-full">
-          <FileText className="h-4 w-4 mr-2" /> Download Invoice
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
-
-const CustomerPaymentDetails: FC<{ isLoading: boolean }> = ({ isLoading }) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Payment Method</CardTitle>
-        <CardDescription>Primary card details</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-16 w-full" />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center space-x-4 bg-secondary p-4 rounded-lg">
-              <CreditCard className="h-6 w-6" />
-              <div>
-                <p className="font-medium">VISA •••• 4567</p>
-                <p className="text-sm text-muted-foreground">Expires 12/24</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Issuer</p>
-                <p className="text-muted-foreground">VISA</p>
-              </div>
-              <div>
-                <p className="font-medium">Country</p>
-                <p className="text-muted-foreground">United States</p>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full">
-          <CreditCard className="h-4 w-4 mr-2" /> Update Payment Method
-        </Button>
+        <Link to={PATHS.STORE_ORDERS} className="w-full">
+          <Button variant="outline" className="w-full">
+            <FileText className="h-4 w-4 mr-2" /> View Invoices
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );
@@ -1053,7 +1014,7 @@ const CustomerOrderDetails: FC<{ orders: IOrder[]; isLoading: boolean }> = ({
           ) : (
             orders.map((order, index) => (
               <div key={order._id} className="mb-6 last:mb-0">
-                <h4 className="text-sm font-semibold mb-2">
+                <h4 className="text-sm font-semibold mb-2 truncate">
                   Order #{order._id}
                 </h4>
                 <div className="space-y-2">
@@ -1065,7 +1026,7 @@ const CustomerOrderDetails: FC<{ orders: IOrder[]; isLoading: boolean }> = ({
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant="outline">{order.orderStatus}</Badge>
+                    <PaymentStatusBadge status={order.orderStatus} />
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Total:</span>
@@ -1096,11 +1057,14 @@ const CustomerOrderDetails: FC<{ orders: IOrder[]; isLoading: boolean }> = ({
                           <p className="text-sm font-medium">
                             {product.productName}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground truncate">
                             ID: {product._id}
                           </p>
                         </div>
-                        <div className="text-sm">Qty: {product.maxStock}</div>
+                        <div className="text-sm">
+                          Qty:{" "}
+                          {getOrderProductCount(order.products, product._id!)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1111,7 +1075,16 @@ const CustomerOrderDetails: FC<{ orders: IOrder[]; isLoading: boolean }> = ({
                   variant="secondary"
                   className="mt-3 w-full"
                 >
-                  <Link to={PATHS.STORE_ORDERS + order._id}> View Order</Link>
+                  <Link
+                    to={
+                      PATHS.STORE_ORDERS +
+                      order._id +
+                      `?phoneNumber=${order.customerDetails.phoneNumber}`
+                    }
+                  >
+                    {" "}
+                    View Order
+                  </Link>
                 </Button>
                 {index < orders.length - 1 && <Separator className="my-4" />}
               </div>

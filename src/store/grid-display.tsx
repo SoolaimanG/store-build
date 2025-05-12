@@ -39,8 +39,8 @@ const GridDisplay: FC<{
           onClick={onRefresh}
           className="flex items-center gap-2"
           style={{
-            borderColor: store?.customizations?.theme.primary,
-            background: isHovered ? store?.customizations?.theme.primary : "",
+            borderColor: store?.customizations?.theme?.primary,
+            background: isHovered ? store?.customizations?.theme?.primary : "",
           }}
         >
           <RefreshCw

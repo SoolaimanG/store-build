@@ -151,7 +151,7 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           {children}
           {currentCart.length > 0 && (
             <span
-              style={{ backgroundColor: customizations?.theme.primary }}
+              style={{ backgroundColor: customizations?.theme?.primary }}
               className={cn(
                 "absolute -top-2 -right-1 h-5 w-5 rounded-full text-primary-foreground text-xs flex items-center justify-center"
               )}
@@ -161,7 +161,7 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
           )}
         </div>
       </SheetTrigger>
-      <SheetContent className="w-[90%]">
+      <SheetContent className="w-full md:max-w-lg">
         <SheetHeader className="flex-row items-center justify-between">
           <SheetTrigger>
             <Button className="rounded-full" size={"icon"} variant="ghost">
@@ -227,7 +227,7 @@ export function CART({ children, open: initialOpen = false }: CARTProps) {
             >
               <Button
                 disabled={isLoading}
-                style={{ background: customizations?.theme.primary }}
+                style={{ background: customizations?.theme?.primary }}
               >
                 CheckOut {currentCart.length} Items
               </Button>

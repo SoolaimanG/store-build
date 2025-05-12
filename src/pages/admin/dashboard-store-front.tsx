@@ -75,7 +75,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToastError } from "@/hooks/use-toast-error";
 import { toast } from "@/hooks/use-toast";
@@ -84,6 +83,7 @@ import { SaveChanges } from "@/components/save-store-front-changes";
 import { useStoreBuildState } from "@/store";
 import { ProductSelector } from "@/components/product-selector";
 import { ImageUploader } from "@/components/image-uploader";
+import { useDocumentTitle } from "@uidotdev/usehooks";
 
 interface Tab {
   label: string;
@@ -226,7 +226,7 @@ const StoreFrontSettings: FC<{ store: Partial<IStore> }> = ({ store }) => {
                                 SVG, PNG, JPG or GIF (MAX. 800x400px)
                               </p>
                             </div>
-                            <input
+                            <Input
                               id="dropzone-file"
                               type="file"
                               className="hidden"
@@ -1551,6 +1551,8 @@ const tabs = [
 ];
 
 function AnimatedTabs({ tabs }: AnimatedTabsProps) {
+  useDocumentTitle("Customize Your Store");
+
   const { setCurrentStore } = useStoreBuildState();
   const location = useLocation();
   const n = useNavigate();
@@ -1583,8 +1585,8 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
   const page = tabs[currentTab];
 
   return (
-    <Card className="overflow-hidden md:p-3 p-1 w-full">
-      <CardHeader className="p-0 relative overflow-x-auto w-full">
+    <div className="overflow-hidden md:p-3 w-full">
+      <header className="p-0 relative overflow-x-auto border-b-2 w-full">
         <div ref={tabsRef} className="flex items-center gap-3 p-2">
           {tabs.map((tab, idx) => (
             <motion.div
@@ -1606,30 +1608,28 @@ function AnimatedTabs({ tabs }: AnimatedTabsProps) {
             </motion.div>
           ))}{" "}
         </div>{" "}
-      </CardHeader>{" "}
-      <CardContent
+      </header>{" "}
+      <div
         className={cn(
           "mt-4 p-2",
           isLoading && "flex items-center justify-center mt-10 text-slate-800"
         )}
       >
-        <ScrollArea className={cn("h-[30rem]")}>
-          <motion.div
-            key={key}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {isLoading ? (
-              <Loader2 size={100} className="animate-spin" />
-            ) : (
-              <page.content store={store || {}} key={store?._id} />
-            )}{" "}
-          </motion.div>{" "}
-        </ScrollArea>{" "}
-      </CardContent>{" "}
-    </Card>
+        <motion.div
+          key={key}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {isLoading ? (
+            <Loader2 size={100} className="animate-spin" />
+          ) : (
+            <page.content store={store || {}} key={store?._id} />
+          )}{" "}
+        </motion.div>{" "}
+      </div>{" "}
+    </div>
   );
 }
 

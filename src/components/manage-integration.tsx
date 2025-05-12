@@ -28,7 +28,7 @@ import {
   IPaymentIntegration,
 } from "@/types";
 import { Text } from "./text";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Plus, Shield, X } from "lucide-react";
 
 import {
   Drawer,
@@ -66,6 +66,9 @@ import { useToastError } from "@/hooks/use-toast-error";
 import { ManageStoreAddress } from "./manage-store-address";
 import AddPhoneNumber from "./add-phone-number";
 import { EmptyProductState } from "./empty";
+import { ConfirmationModal } from "./confirmation-modal";
+import { AddApiKeys } from "@/assets/add-api-keys";
+import { Link } from "react-router-dom";
 
 export function ManageIntegration({
   integration,
@@ -85,6 +88,8 @@ export function ManageIntegration({
   const [isComboBoxOpen, setIsComboBoxOpen] = useState(false);
   const [isPending, startTransition] = useState(false);
   const [language, setLanguage] = useState("");
+
+  const accessToken = "1234567890028839829028";
 
   const [chatbotPermissions, setChatbotPermissions] = useState<
     Record<string, boolean>
@@ -168,8 +173,8 @@ export function ManageIntegration({
       const settings = // @ts-ignore
         _integration?.integration?.settings as IDeliveryIntegration;
 
-      setSelectedStates(settings.shippingRegions || []);
-      setIsNationwide(settings.deliveryNationwide || false);
+      setSelectedStates(settings?.shippingRegions || []);
+      setIsNationwide(settings?.deliveryNationwide || false);
     }
 
     if (integration.id === "unsplash") {
@@ -334,6 +339,34 @@ export function ManageIntegration({
       });
     } finally {
       startTransition(false);
+    }
+  };
+
+  const handleAddApiKey = async (data: {
+    name: string;
+    accessKey: string;
+    token?: string;
+    description?: string;
+  }) => {
+    await storeBuilder.addsendBoxApiKey(data?.token || data.accessKey);
+  };
+
+  const deleteSendBoxApiKey = async () => {
+    try {
+      const { message } = await storeBuilder.deleteSendBoxApiKey();
+      queryClient.invalidateQueries({
+        queryKey: ["integration", integration.id],
+      });
+      toast({
+        title: "SUCCESS",
+        description: message,
+      });
+    } catch (error) {
+      toast({
+        title: "ERROR",
+        description: errorMessageAndStatus(error).message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -587,6 +620,62 @@ export function ManageIntegration({
               <header></header>
             </div>
             <div className="space-y-6">
+              {/* Access Token Section */}
+              <div className="space-y-2 p-4 border rounded-lg bg-muted/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={18} className="text-green-600" />
+                  <Label htmlFor="accessToken" className="font-medium">
+                    Access Token
+                  </Label>
+                </div>
+
+                <div className="text-sm text-muted-foreground mb-3">
+                  Your access token is encrypted and securely stored. It's only
+                  used for authenticating with our delivery service.
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="accessToken"
+                      type={"password"}
+                      value={_integration?.hasApiKeys ? accessToken : ""}
+                      className="pr-10"
+                      placeholder={
+                        _integration?.hasApiKeys
+                          ? "••••••••••••••••••••••"
+                          : "API_KEYS_NOT_PROVIDED"
+                      }
+                      readOnly
+                    />
+                  </div>
+
+                  {_integration?.hasApiKeys ? (
+                    <ConfirmationModal
+                      title="Delete SendBox Key"
+                      message="Deleting this key means that you and your customers will not be able to access the sendBox integration anymore."
+                      onConfirm={deleteSendBoxApiKey}
+                    >
+                      <Button variant="destructive" size="sm">
+                        Delete
+                      </Button>
+                    </ConfirmationModal>
+                  ) : (
+                    <AddApiKeys onSubmit={handleAddApiKey}>
+                      <Button variant="secondary" size="sm">
+                        Update Token
+                      </Button>
+                    </AddApiKeys>
+                  )}
+                </div>
+
+                <Button asChild variant="link" className="px-0">
+                  <Link to={`https://app.sendbox.co`} target="_blank">
+                    Get Access Token
+                  </Link>
+                </Button>
+              </div>
+
               <div className="flex items-center justify-between space-x-2">
                 <div className="flex flex-col space-y-1">
                   <Label htmlFor="nationwide">Deliver Nationwide</Label>
@@ -624,7 +713,7 @@ export function ManageIntegration({
                             placeholder="Search states..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="focus:ring-0 focus:border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none  focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="focus:ring-0 focus:border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>
                         <ScrollArea className="h-[300px] overflow-auto p-1">
@@ -658,7 +747,7 @@ export function ManageIntegration({
                           className="text-xs capitalize bg-secondary/85 rounded-md"
                         >
                           {state}
-                          <button
+                          <div
                             className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -672,7 +761,7 @@ export function ManageIntegration({
                             }}
                           >
                             <X className="h-3 w-3" />
-                          </button>
+                          </div>
                         </Badge>
                       ))}
                     </div>

@@ -2,6 +2,8 @@ import React from "react";
 import { LightingSceneProps } from "@/types";
 import { cn } from "@/lib/utils";
 
+//
+
 const sizeClasses = {
   small: "w-[36.125rem] sm:w-[72.1875rem]",
   medium: "w-[48.125rem] sm:w-[96.1875rem]",

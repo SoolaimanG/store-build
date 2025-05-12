@@ -12,7 +12,7 @@ interface LogoProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 }
 
 export const Logo: FC<LogoProps> = ({
-  path = window.location.origin,
+  path = window?.location?.origin || "/",
   className,
   name = "StoreBuild",
   animate = false,

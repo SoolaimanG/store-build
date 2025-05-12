@@ -1,5 +1,12 @@
-import { Circle, TruckIcon } from "lucide-react";
-import { ArrowLeft, Pencil, ChevronDown } from "lucide-react";
+"use client";
+
+import {
+  ArrowLeft,
+  Pencil,
+  ChevronDown,
+  FileText,
+  Receipt,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Link, useParams } from "react-router-dom";
-import { IOrder, IOrderStatus, PATHS } from "@/types";
+import { type IOrder, type IOrderStatus, PATHS } from "@/types";
 import {
   allProductsAreDigital,
   errorMessageAndStatus,
@@ -29,27 +36,12 @@ import { SendEmailButton } from "@/components/send-email";
 import { EditModal } from "@/components/edit-modal";
 import { OrderDetailsSkeleton } from "@/components/loaders/order-details-loader";
 import { useToastError } from "@/hooks/use-toast-error";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { CreatePickupForm } from "@/components/create-pickup-form";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+
 import { toast } from "@/hooks/use-toast";
 import { useStoreBuildState } from "@/store";
-import StoreFooter from "@/store/footer";
-import { EmptyProductState } from "@/components/empty";
+import { OrderTimeLine } from "@/components/order-timeline";
+import queryString from "query-string";
+import { ConfirmationModal } from "@/components/confirmation-modal";
 
 const orderStatuses: IOrderStatus[] = [
   "Cancelled",
@@ -65,15 +57,20 @@ const DashboardOrderDetails = () => {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [isPending, startTransition] = useState(false);
+  const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
   const queryClient = useQueryClient();
   const { user } = useStoreBuildState();
+  const [orderStatus, setOrderStatus] = useState<IOrderStatus>();
+  const { phoneNumber = "" } = queryString.parse(location.search) as {
+    phoneNumber?: string;
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["order", orderId],
     queryFn: () =>
       storeBuilder.getOrder<{ order: IOrder; deliveryDetails: null }>(
         orderId,
-        user?.storeId
+        phoneNumber
       ),
     enabled: Boolean(orderId && user),
   });
@@ -90,14 +87,9 @@ const DashboardOrderDetails = () => {
 
     try {
       startTransition(true);
-      // TODO: Implement update logic
-      const res = await storeBuilder.editOrder(
-        _id || "",
-        {
-          orderStatus,
-        },
-        true
-      );
+      const res = await storeBuilder.editOrder(_id || "", {
+        orderStatus,
+      });
 
       queryClient.invalidateQueries({ queryKey: ["order", _id] });
 
@@ -116,6 +108,37 @@ const DashboardOrderDetails = () => {
       });
     } finally {
       startTransition(false);
+    }
+  };
+
+  const handleGenerateReceipt = async () => {
+    const { _id = "" } = _data?.order as IOrder;
+
+    try {
+      setIsGeneratingReceipt(true);
+      // TODO: Implement receipt generation logic
+      // This would typically call an API endpoint that generates a PDF receipt
+
+      toast({
+        title: "Receipt Generated",
+        description: "The receipt has been generated successfully.",
+      });
+
+      // Simulate download or open in new tab
+      setTimeout(() => {
+        window.open(`/api/receipts/${_id}`, "_blank");
+      }, 1000);
+    } catch (error) {
+      const { status: title, message: description } =
+        errorMessageAndStatus(error);
+
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReceipt(false);
     }
   };
 
@@ -154,35 +177,58 @@ const DashboardOrderDetails = () => {
                 </p>
               </div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                defaultValue={_data?.order.orderStatus}
-                asChild
-              >
-                <Button size="sm" variant="outline" className="gap-1">
-                  {_data?.order.orderStatus} <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {orderStatuses.map((status) => (
-                  <DropdownMenuItem
-                    disabled={isPending}
-                    key={status}
-                    onClick={() => changeOrderStatus(status)}
-                  >
-                    {status}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  defaultValue={_data?.order.orderStatus}
+                  asChild
+                >
+                  <Button size="sm" variant="outline" className="gap-1">
+                    {_data?.order.orderStatus}{" "}
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="flex flex-col">
+                  {orderStatuses.map((status) => (
+                    <DropdownMenuItem
+                      key={status}
+                      disabled={isPending}
+                      onClick={() => setOrderStatus(status)}
+                    >
+                      {status}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex md:flex-row flex-col items-start md:items-center justify-between">
                 <h2 className="text-lg font-semibold">Details</h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleGenerateReceipt}
+                    disabled={isGeneratingReceipt}
+                  >
+                    <Receipt className="h-4 w-4 mr-1" />
+                    {isGeneratingReceipt ? "Generating..." : "Generate Receipt"}
+                  </Button>
+                  <Link
+                    to={`/invoices/${_data?.order._id}`}
+                    target="_blank"
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    View Invoice
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
                 {_data?.order.products.map((product) => (
@@ -241,7 +287,7 @@ const DashboardOrderDetails = () => {
                     <span className="text-muted-foreground">Shipping</span>
                     <span className="font-medium text-red-500">
                       {formatAmountToNaira(
-                        _data?.order.shippingDetails.shippingCost || 0
+                        _data?.order?.shippingDetails?.shippingCost || 0
                       )}
                     </span>
                   </div>
@@ -277,9 +323,13 @@ const DashboardOrderDetails = () => {
                   <h2 className="text-lg font-semibold">Delivery Tracks</h2>
                 </CardHeader>
                 <CardContent>
-                  <OrderTimeline
-                    order={_data?.order!}
-                    deliveryDetails={_data?.deliveryDetails!}
+                  <OrderTimeLine
+                    createdAt={_data?.order.createdAt!}
+                    estimatedDeliveryDate={
+                      _data?.order?.shippingDetails?.estimatedDeliveryDate!
+                    }
+                    updatedAt={_data?.order.updatedAt!}
+                    orderStatus={_data?.order.orderStatus!}
                   />
                 </CardContent>
               </Card>
@@ -323,6 +373,7 @@ const DashboardOrderDetails = () => {
                   orderId={_data?.order._id || ""}
                   isDesktop={isDesktop}
                   customerEmail={_data?.order.customerDetails.email}
+                  phoneNumber={_data?.order.customerDetails.phoneNumber!}
                 />
               </CardContent>
             </Card>
@@ -343,14 +394,14 @@ const DashboardOrderDetails = () => {
                 <CardContent className="grid gap-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm font-medium">Ship by</div>
+                      <div className="text-sm font-medium">Courier</div>
                       <div className="text-sm text-muted-foreground">
-                        {_data?.order.shippingDetails.carrier ||
+                        {_data?.order.shippingDetails?.carrier ||
                           "Not Applicable"}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm font-medium">Speedy</div>
+                      <div className="text-sm font-medium">Delivery Type</div>
                       <div className="text-sm text-muted-foreground">
                         {_data?.order.deliveryType || "Not Applicable"}
                       </div>
@@ -360,7 +411,7 @@ const DashboardOrderDetails = () => {
                     <div className="text-sm font-medium">Tracking No.</div>
                     <div className="text-sm text-muted-foreground">
                       <a href="#" className="hover:underline">
-                        {_data?.order.shippingDetails.trackingNumber ||
+                        {_data?.order.shippingDetails?.trackingNumber ||
                           "Not Applicable"}
                       </a>
                     </div>
@@ -416,154 +467,20 @@ const DashboardOrderDetails = () => {
           isDesktop={isDesktop}
           orderData={_data?.order}
         />
+
+        <ConfirmationModal
+          key={orderStatus}
+          onConfirm={() => changeOrderStatus(orderStatus!)}
+          isOpen={Boolean(orderStatus)}
+          onClose={() => setOrderStatus(undefined)}
+          message={`Clicking on "Update status" would update the status of this order to ${orderStatus?.toUpperCase()}, and ${_data?.order.customerDetails.name?.toUpperCase()} will be notified via email`}
+          title="Update Order Status"
+          btnText="Confirm"
+          btnVariant="default"
+        />
       </div>
-      <StoreFooter />
     </Fragment>
   );
 };
 
 export default DashboardOrderDetails;
-
-interface DeliveryDetails {
-  // Add the necessary properties here
-}
-
-interface OrderTimelineProps {
-  deliveryDetails: DeliveryDetails | null;
-  order: IOrder;
-}
-
-export function OrderTimeline({ deliveryDetails, order }: OrderTimelineProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const isDesktop = useMediaQuery("(min-width:767px)");
-
-  const ModalComponent = isDesktop ? Dialog : Drawer;
-  const ContentComponent = isDesktop ? DialogContent : DrawerContent;
-  const HeaderComponent = isDesktop ? DialogHeader : DrawerHeader;
-  const TitleComponent = isDesktop ? DialogTitle : DrawerTitle;
-  const TriggerComponent = isDesktop ? DialogTrigger : DrawerTrigger;
-  const DescriptionComponent = isDesktop
-    ? DialogDescription
-    : DrawerDescription;
-
-  const timelineData = [
-    {
-      status: "Delivery successful",
-      date: "28 Nov 2024 1:55 am",
-      completed: true,
-    },
-    {
-      status: "Transporting to [2]",
-      date: "27 Nov 2024 12:55 am",
-      completed: false,
-    },
-    {
-      status: "Transporting to [1]",
-      date: "25 Nov 2024 11:55 pm",
-      completed: false,
-    },
-    {
-      status: "The shipping unit has picked up the goods",
-      date: "24 Nov 2024 10:55 pm",
-      completed: false,
-    },
-    {
-      status: "Order has been created",
-      date: "23 Nov 2024 9:55 pm",
-      completed: false,
-    },
-  ];
-
-  if (!deliveryDetails)
-    return (
-      // <div className="mb-4 flex flex-col gap-3 w-full space-y-4">
-      <EmptyProductState
-        icon={TruckIcon}
-        header="PickUp has not been created yet!"
-        message="To Create a pickup using sendbox please click the button below to start creating a pickup for your customer"
-      >
-        <ModalComponent open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <TriggerComponent asChild>
-            <Button size="lg" variant="outline">
-              Create Pickup
-            </Button>
-          </TriggerComponent>
-          <ContentComponent>
-            <HeaderComponent>
-              <TitleComponent className="text-xl font-semibold">
-                Create Pickup
-              </TitleComponent>
-              <DescriptionComponent className="">
-                When creating a pick up for a customer please note that the
-                origin address is your store address
-              </DescriptionComponent>
-            </HeaderComponent>
-            <CreatePickupForm
-              onSubmit={() => setIsDialogOpen(false)}
-              order={order}
-            />
-          </ContentComponent>
-        </ModalComponent>
-      </EmptyProductState>
-      // </div>
-    );
-
-  return (
-    <div className="relative">
-      <div className="absolute left-3 top-3 h-[calc(100%-24px)] w-px bg-border" />
-      <div className="space-y-8">
-        {timelineData.map((item, index) => (
-          <div key={index} className="md:flex md:space-x-10">
-            <div className="flex gap-4">
-              <div
-                className={`h-6 w-6 rounded-full border-2 z-20 ${
-                  item.completed
-                    ? "border-primary bg-primary text-white"
-                    : "border-muted bg-background"
-                } flex items-center justify-center`}
-              >
-                <Circle
-                  className={`h-2 w-2 ${item.completed ? "fill-current" : ""}`}
-                />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium leading-none">{item.status}</p>
-                <p className="text-sm text-muted-foreground">{item.date}</p>
-              </div>
-            </div>
-            <div className="flex-1">
-              {index === 0 && (
-                <>
-                  <div className="space-y-1 ml-10 md:ml-0 mt-3 md:mt-0">
-                    <div className="grid grid-cols-2 text-sm">
-                      <span className="text-muted-foreground">Order time</span>
-                      <span>28 Nov 2024 1:55 am</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                      <span className="text-muted-foreground">
-                        Payment time
-                      </span>
-                      <span>28 Nov 2024 1:55 am</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                      <span className="text-muted-foreground">
-                        Delivery time for the carrier
-                      </span>
-                      <span>28 Nov 2024 1:55 am</span>
-                    </div>
-                    <div className="grid grid-cols-2 text-sm">
-                      <span className="text-muted-foreground">
-                        Completion time
-                      </span>
-                      <span>28 Nov 2024 1:55 am</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

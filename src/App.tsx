@@ -25,12 +25,16 @@ import StoreProducts from "./store/store-products";
 import StoreProductsDetails from "./store/store-products-details";
 import DashboardCoupon from "./pages/admin/dashboard-coupon";
 import StoreTrackOrder from "./store/store-track-order";
-import StoreOrderDetail from "./store/store-order-detail";
 import DashboardSettings from "./pages/admin/dashboard-settings";
 import DashboardReferrals from "./pages/admin/dashboard-referrals";
 import DashboardTutorial from "./pages/admin/dashboard-tutorial";
 import DashboardDynamicTutorial from "./pages/admin/dashboard-dynamic-tutorial";
 import ContactUS from "./pages/contact-us";
+import Invoice from "./pages/invoice";
+import OrderDetails from "./pages/order-detail";
+import Pay from "./pages/pay";
+import DashboardBalance from "./pages/admin/dashboard-balance";
+import ValidateFlutterWavePayment from "./pages/validate-flutterwave-payment";
 
 NProgress.configure({ showSpinner: false });
 
@@ -178,14 +182,6 @@ function App() {
                   </StoreProvider>
                 }
               />
-              <Route
-                path={PATHS.STORE + ":storeCode" + "/track-order/" + ":orderId"}
-                element={
-                  <StoreProvider>
-                    <StoreOrderDetail />
-                  </StoreProvider>
-                }
-              />
 
               <Route
                 path={PATHS.STORE_SETTINGS}
@@ -220,6 +216,21 @@ function App() {
                 }
               />
               <Route path={PATHS.CONTACT_US} element={<ContactUS />} />
+              <Route path={PATHS.INVOICE + ":id"} element={<Invoice />} />
+              <Route path={PATHS.ORDERS + ":id"} element={<OrderDetails />} />
+              <Route path={PATHS.PAY + ":id"} element={<Pay />} />
+              <Route
+                path={PATHS.STORE_BALANCE}
+                element={
+                  <DashboardProvider>
+                    <DashboardBalance />
+                  </DashboardProvider>
+                }
+              />
+              <Route
+                path={PATHS.FLUTTERWAVE + "payment/"}
+                element={<ValidateFlutterWavePayment />}
+              />
             </Routes>
           </AppLayOut>
         </BrowserRouter>

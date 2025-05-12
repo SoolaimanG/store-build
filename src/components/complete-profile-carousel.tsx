@@ -35,13 +35,16 @@ export function ProfileCompletionCarousel() {
   const sendVerificationCode = async () => {
     try {
       const res = await storeBuilder.sendOTP("verify-email", user?.email!);
-      setOpenOTPValidator({ otpFor: "verify-email", userEmail: user?.email! });
+      setOpenOTPValidator({
+        otpFor: "verify-email",
+        userEmail: user?.email!,
+        open: true,
+      });
       toast({
         title: "SUCCESS",
         description: res.message,
       });
     } catch (error) {
-      console.log(error);
       const { message: description } = errorMessageAndStatus(error);
       toast({
         title: "ERROR",
@@ -89,7 +92,7 @@ export function ProfileCompletionCarousel() {
               <CarouselContent>
                 {!isEmailVerified && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">
@@ -116,7 +119,7 @@ export function ProfileCompletionCarousel() {
                 )}
                 {!phoneNumber && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">
@@ -141,7 +144,7 @@ export function ProfileCompletionCarousel() {
                 )}
                 {!hasProduct && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">
@@ -157,11 +160,7 @@ export function ProfileCompletionCarousel() {
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-end items-end py-0 mt-0">
-                        <Button
-                          asChild
-                          variant="ringHover"
-                          //   disabled={steps[currentStep].completed}
-                        >
+                        <Button asChild variant="ringHover">
                           <Link
                             to={
                               PATHS.STORE_PRODUCTS +
@@ -178,7 +177,7 @@ export function ProfileCompletionCarousel() {
                 )}
                 {!addPaymentMethod && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">
@@ -205,7 +204,7 @@ export function ProfileCompletionCarousel() {
                 )}
                 {import.meta.env.VITE_IS_REFERRAL_ONGOING === "true" && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">
@@ -233,7 +232,7 @@ export function ProfileCompletionCarousel() {
                 )}
                 {!tutorialVideoWatch && (
                   <CarouselItem className="md:basis-1/2 lg:basis-1/3 basis-[85%]">
-                    <Card className="w-full h-[12rem]">
+                    <Card className="w-full md:h-[12rem] h-[13rem]">
                       <CardContent className="pt-2">
                         <div className="flex flex-col">
                           <div className="p-2 bg-primary/10 w-fit rounded-full">

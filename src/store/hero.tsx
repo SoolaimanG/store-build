@@ -29,7 +29,7 @@ const MobileMenu: FC<{ children: ReactNode; isOpen?: boolean }> = ({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger>{children}</SheetTrigger>
+      <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent side="left" className="w-[80%]">
         <SheetHeader>
           <Logo name={storeName} />
@@ -94,7 +94,7 @@ export const HeroSectionNavBar: FC<{ isLoading?: boolean }> = () => {
                   onMouseLeave={() => setIsHovered(0)}
                   style={{
                     background:
-                      isHovered === 1 ? customizations?.theme.secondary : "",
+                      isHovered === 1 ? customizations?.theme?.secondary : "",
                     color: isHovered === 1 ? "white" : "",
                   }}
                   variant="ghost"
@@ -112,7 +112,7 @@ export const HeroSectionNavBar: FC<{ isLoading?: boolean }> = () => {
                   onMouseLeave={() => setIsHovered(0)}
                   style={{
                     background:
-                      isHovered === 2 ? customizations?.theme.secondary : "",
+                      isHovered === 2 ? customizations?.theme?.secondary : "",
                     color: isHovered === 2 ? "white" : "",
                   }}
                   variant="ghost"
@@ -125,7 +125,7 @@ export const HeroSectionNavBar: FC<{ isLoading?: boolean }> = () => {
             )}
             <CART>
               <Button
-                style={{ background: customizations?.theme.secondary }}
+                style={{ background: customizations?.theme?.secondary }}
                 variant="ghost"
                 size="icon"
                 className="rounded-full"
@@ -154,7 +154,7 @@ const HeroSection = () => {
 
   return (
     <div
-      style={{ background: currentStore?.customizations?.theme.secondary }}
+      style={{ background: currentStore?.customizations?.theme?.secondary }}
       className="w-screen"
     >
       <Section className="md:pt-20 pt-32 w-full">

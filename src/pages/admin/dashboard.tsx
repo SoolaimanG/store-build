@@ -4,9 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   ChevronRight,
   DollarSign,
+  Package,
   Plus,
   ShoppingBag,
   Sparkles,
+  User,
 } from "lucide-react";
 import {
   addQueryParameter,
@@ -47,6 +49,8 @@ import { format } from "date-fns";
 import { EmptyProductState } from "@/components/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProfileCompletionCarousel } from "@/components/complete-profile-carousel";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
+import { useDocumentTitle } from "@uidotdev/usehooks";
 // import { CompleteProfileCard } from "@/components/complete-profile-carousel";
 
 const timeRanges = [
@@ -63,6 +67,7 @@ const chartConfig = {
 };
 
 export default function Dashboard() {
+  useDocumentTitle("Store Build | Dashboard");
   const location = useLocation();
   const n = useNavigate();
   const { user } = useStoreBuildState();
@@ -93,7 +98,7 @@ export default function Dashboard() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="p-3 max-w-[1400px] mx-auto space-y-6"
+      className="p-4 container mx-auto space-y-6"
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-3 w-full sm:w-auto">
@@ -192,7 +197,11 @@ export default function Dashboard() {
           <PricingCard
             {...{ ...tiers[1], featured: false }}
             tierIdx={1}
-            btnText="Upgrade to premium"
+            btnText={
+              user?.plan?.type === "premium"
+                ? "Add Premium"
+                : "Upgrade to premium"
+            }
             className="md:col-span-1 rounded-md sm:rounded-t-md lg:rounded-bl-md lg:rounded-tr-md sm:p-5"
           />
         </div>
@@ -239,7 +248,17 @@ const MetricsCard: FC<IDashboardMetrics> = (metric) => {
 export function RecentSales({ className }: { className?: string }) {
   const { isLoading, data, error } = useQuery({
     queryKey: ["recent-sales"],
-    queryFn: () => storeBuilder.getOrders("Paid", 0, 5, true, "Completed"),
+    queryFn: () =>
+      storeBuilder.getOrders(
+        "Paid",
+        true,
+        "Completed",
+        undefined,
+        undefined,
+        undefined,
+        1,
+        5
+      ),
   });
 
   const { data: recentSales } = data || {};
@@ -315,7 +334,7 @@ export function RecentSales({ className }: { className?: string }) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="bg-gray-50 dark:bg-slate-900 rounded-b-lg">
+      <CardFooter className="bg-gray-50 dark:bg-slate-900 rounded-b-lg bottom-0 relative">
         <Button asChild variant="outline" size="lg" className="w-full mt-5">
           <Link
             to={PATHS.STORE_ORDERS}
@@ -333,7 +352,7 @@ export function RecentSales({ className }: { className?: string }) {
 function RecentSalesLoading() {
   return (
     <div className="space-y-4">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(3)].map((_, i) => (
         <div
           key={i}
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg animate-pulse"
@@ -425,89 +444,110 @@ export function Chart({ className }: { className?: string }) {
 export function RecentOrder({ className }: { className?: string }) {
   const { isLoading, data, error } = useQuery({
     queryKey: ["orders"],
-    queryFn: () => storeBuilder.getOrders(undefined, 0, 5, false),
+    queryFn: () =>
+      storeBuilder.getOrders(
+        undefined,
+        false,
+        "All",
+        undefined,
+        undefined,
+        undefined,
+        1,
+        5
+      ),
   });
 
   const { data: recentOrders } = data || {};
+  const [hoveredOrder, setHoveredOrder] = useState<string | null>(null);
 
   useToastError(error);
 
   return (
-    <Card className={cn("space-y-2 p-2", className)}>
-      <CardHeader>
-        <CardTitle className="text-xl sm:text-2xl">My Recent Orders</CardTitle>
+    <Card className={cn("overflow-hidden border-none shadow-md", className)}>
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 pb-6">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold sm:text-xl">
+          <Package className="h-5 w-5 text-primary" />
+          My Recent Orders
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 p-0">
+      <CardContent className="p-0">
         {isLoading ? (
           <RecentOrdersLoading />
         ) : recentOrders && recentOrders.orders.length > 0 ? (
-          recentOrders.orders.map((order, i) => (
-            <div
-              key={i}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border cursor-pointer space-y-2 sm:space-y-0"
-            >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {formatAmountToNaira(order.totalAmount)}
-                  </span>
-                  {Boolean(order.amountLeftToPay) && (
-                    <span className="text-sm text-destructive">
-                      {formatAmountToNaira(order.amountLeftToPay)}
-                    </span>
-                  )}
-                </div>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "font-medium capitalize",
-                    order.paymentDetails.paymentStatus === "paid" &&
-                      "text-green-600 border-green-600/20 bg-green-50",
-                    order.paymentDetails.paymentStatus === "pending" &&
-                      "text-yellow-600 border-yellow-600/20 bg-yellow-50",
-                    order.paymentDetails.paymentStatus === "failed" &&
-                      "text-red-600 border-red-600/20 bg-red-50"
-                  )}
+          <div className="divide-y mt-2">
+            {recentOrders.orders.map((order, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "relative transition-all duration-200 hover:bg-muted/50",
+                  hoveredOrder === order._id && "bg-muted/50"
+                )}
+                onMouseEnter={() => setHoveredOrder(order?._id!)}
+                onMouseLeave={() => setHoveredOrder(null)}
+              >
+                <Link
+                  to={PATHS.STORE_ORDERS + order._id}
+                  className="block p-4 sm:p-5"
                 >
-                  {order.paymentDetails.paymentStatus}
-                </Badge>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <DollarSign className="h-5 w-5" />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {formatAmountToNaira(order.totalAmount)}
+                          </span>
+                          <PaymentStatusBadge
+                            status={order.paymentDetails.paymentStatus}
+                          />
+                        </div>
+
+                        {Boolean(order.amountLeftToPay) && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <span className="text-destructive font-medium">
+                              {formatAmountToNaira(order.amountLeftToPay)}
+                            </span>
+                            <span>remaining</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {order.customerDetails.name}
+                        </span>
+                      </div>
+
+                      {order.note && (
+                        <p className="text-sm text-muted-foreground line-clamp-1 max-w-[250px]">
+                          {order.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <ChevronRight
+                    className={cn(
+                      "absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-transform duration-200",
+                      hoveredOrder === order._id && "translate-x-1 text-primary"
+                    )}
+                  />
+                </Link>
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                <div className="flex flex-col text-left sm:text-right">
-                  <span className="font-medium">
-                    {order.customerDetails.name}
-                  </span>
-                  <span className="text-[12px] text-muted-foreground line-clamp-1">
-                    {order.note}
-                  </span>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-primary hover:text-primary/60 w-full sm:w-auto"
-                  asChild
-                >
-                  <Link to={PATHS.STORE_ORDERS + order._id}>View order</Link>
-                </Button>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
           <EmptyProductState
-            icon={DollarSign}
-            header="No recent orders"
-            message="When you receive new orders, they will appear here."
-          >
-            <Button asChild variant="ringHover" size="lg">
-              <Link
-                to={
-                  PATHS.STORE_ORDERS + generateRandomString(18) + "/create/#new"
-                }
-              >
-                Create order
-              </Link>
-            </Button>
-          </EmptyProductState>
+            icon={Package}
+            header="No Recent Order"
+            message="Your recent orders will appear here"
+          />
         )}
       </CardContent>
     </Card>
@@ -543,32 +583,62 @@ function RecentOrdersLoading() {
 }
 
 export function AISuggestion({ className }: { className?: string }) {
-  const aiSuggestions = [
-    {
-      title: "Increase Product Variety",
-      description:
-        "Your top-selling category 'Electronics' has limited options. Consider expanding your product range to capture more sales.",
-      action: "View Product Catalog",
-    },
-    {
-      title: "Optimize Pricing Strategy",
-      description:
-        "Your 'Clothing' category has a high volume but lower profit margin. Analyze pricing to improve overall revenue.",
-      action: "Review Pricing",
-    },
-    {
-      title: "Improve Order Processing",
-      description:
-        "There's a backlog in order processing. Streamline your workflow to reduce pending orders and improve customer satisfaction.",
-      action: "View Order Queue",
-    },
-  ];
+  const {
+    isLoading,
+    data: aiSuggestions = [],
+    error,
+  } = useQuery({
+    queryKey: ["ai-suggestions"],
+    queryFn: async () => (await storeBuilder.getAiSuggestion()).data,
+  });
 
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
 
   const nextSuggestion = () => {
     setCurrentSuggestion((prev) => (prev + 1) % aiSuggestions.length);
   };
+
+  const prevSuggestion = () => {
+    setCurrentSuggestion(
+      (prev) => (prev - 1 + aiSuggestions.length) % aiSuggestions.length
+    );
+  };
+
+  useToastError(error);
+
+  if (isLoading) {
+    return (
+      <Card
+        className={cn(
+          "col-span-full md:col-span-1 p-3 h-full flex flex-col",
+          className
+        )}
+      >
+        <CardHeader className="pb-2 px-0 pt-0">
+          <div className="flex items-center">
+            <div className="h-5 w-5 bg-purple-200 rounded mr-2 animate-pulse" />
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 flex-grow flex flex-col">
+          <div className="space-y-4 flex-grow flex flex-col">
+            <div className="rounded-lg p-4 flex flex-col h-full">
+              <div className="h-6 w-3/4 bg-purple-100 rounded mb-2 animate-pulse" />
+              <div className="space-y-2 mb-4 flex-grow">
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-5/6 bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-4/6 bg-gray-100 rounded animate-pulse" />
+              </div>
+              <div className="flex justify-between items-center w-full mt-10 md:mt-auto">
+                <div className="h-9 w-24 bg-purple-100 rounded animate-pulse" />
+                <div className="h-8 w-28 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -587,17 +657,19 @@ export function AISuggestion({ className }: { className?: string }) {
         <div className="space-y-4 flex-grow flex flex-col">
           <div className="rounded-lg p-4 flex flex-col h-full">
             <h3 className="text-lg font-semibold text-purple-700 mb-2">
-              {aiSuggestions[currentSuggestion].title}
+              {aiSuggestions[currentSuggestion]?.title}
             </h3>
             <p className="text-sm text-gray-300 mb-4 flex-grow">
-              {aiSuggestions[currentSuggestion].description}
+              {aiSuggestions[currentSuggestion]?.description}
             </p>
             <div className="flex justify-between items-center w-full mt-10 md:mt-auto">
               <Button
-                variant="outline"
-                // className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                size="sm"
+                variant="ghost"
+                onClick={prevSuggestion}
+                className="text-purple-600"
               >
-                {aiSuggestions[currentSuggestion].action}
+                Prev Suggestion
               </Button>
               <Button
                 variant="ghost"

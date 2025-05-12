@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { PATHS } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { AIChat } from "@/components/ai-chat";
+import { useDocumentTitle } from "@uidotdev/usehooks";
 
 const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [isPending, startTransition] = useState(false);
@@ -26,6 +27,7 @@ const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { isLoading, data, error, refetch } = useQuery({
     queryKey: ["store", storeCode],
     queryFn: () => storeBuilder.getStore(storeCode),
+    retry: 1,
   });
 
   const {
@@ -36,6 +38,13 @@ const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
     queryKey: ["integration", "chatbot"],
     queryFn: () => storeBuilder.getIntegration("chatbot"),
   });
+
+  //Set the title to the store name
+  useDocumentTitle(
+    `${data?.data?.storeName || "Store"} | ${
+      data?.data?.description || "Description"
+    }`
+  );
 
   useEffect(() => {
     if (data?.data) {
@@ -138,7 +147,7 @@ const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
           <Button
             variant="default"
             style={{
-              background: data?.data.customizations?.theme.secondary,
+              background: data?.data.customizations?.theme?.secondary,
             }}
             className="fixed bottom-5 right-3 rounded-full w-12 h-12"
             size="icon"

@@ -59,9 +59,7 @@ export default function StoreFooter() {
         reserved.
       </div>
       <div>
-        <Link to={"/"} className="text-xs text-primary">
-          Create By <Logo />
-        </Link>
+        Create By <Logo />
       </div>
     </footer>
   );

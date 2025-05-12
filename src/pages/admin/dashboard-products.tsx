@@ -9,12 +9,10 @@ import {
   XIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-
-import { useMediaQuery } from "@uidotdev/usehooks";
+import { useDocumentTitle, useMediaQuery } from "@uidotdev/usehooks";
 import { useQuery } from "@tanstack/react-query";
 import { generateRandomString, storeBuilder } from "@/lib/utils";
 import { useStoreBuildState } from "@/store";
@@ -38,6 +36,7 @@ const fadeInUp = {
 };
 
 export default function ProductsPage() {
+  useDocumentTitle("My Store Products");
   const { user } = useStoreBuildState();
   const [showFilters, setShowFilters] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -63,6 +62,7 @@ export default function ProductsPage() {
     rating: number;
     page?: number;
     sizes?: string[];
+    isActive?: boolean;
   };
 
   const { isLoading, data, error } = useQuery({

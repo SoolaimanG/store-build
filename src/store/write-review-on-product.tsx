@@ -106,7 +106,7 @@ const WriteReviewOnProduct: FC<{
                 style={{
                   background:
                     selectedRating === idx || isHovered === idx
-                      ? store?.customizations?.theme.primary
+                      ? store?.customizations?.theme?.primary
                       : "",
                 }}
                 onClick={() => setSelectedRating(idx)}
@@ -128,7 +128,7 @@ const WriteReviewOnProduct: FC<{
                 style={{
                   color:
                     selectedRating === idx || isHovered === idx
-                      ? store?.customizations?.theme.primary
+                      ? store?.customizations?.theme?.primary
                       : "",
                 }}
                 className={cn("text-sm text-gray-600")}
@@ -173,7 +173,7 @@ const WriteReviewOnProduct: FC<{
               <Button
                 disabled={!(selectedRating && email && review) || isPending}
                 onClick={WriteReviewOnProduct}
-                style={{ background: store?.customizations?.theme.primary }}
+                style={{ background: store?.customizations?.theme?.primary }}
                 variant="shine"
               >
                 Post Review
@@ -195,7 +195,7 @@ const WriteReviewOnProduct: FC<{
             <Button
               disabled={!(selectedRating && email && review) || isPending}
               onClick={WriteReviewOnProduct}
-              style={{ background: store?.customizations?.theme.primary }}
+              style={{ background: store?.customizations?.theme?.primary }}
               variant="shine"
             >
               Post Review

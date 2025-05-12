@@ -20,6 +20,11 @@ const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width:767px)");
 
+  const q = queryString.parse(location.search, { parseBooleans: true }) as {
+    useAi: boolean;
+    prompt: string;
+  };
+
   useEffect(() => {
     setTheme("dark");
   }, []);
@@ -47,7 +52,7 @@ const DashboardProvider: FC<{ children: ReactNode }> = ({ children }) => {
       <DashBoardNavBar />
       {!isMobile && <SideBar />}
       <main className={cn("pt-20 pl-16", isMobile && "pl-0 relative")}>
-        <AIChat type="storeHelper">
+        <AIChat open={q.useAi} message={q.prompt} type="storeHelper">
           <Button
             variant="shine"
             size="icon"

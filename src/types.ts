@@ -20,6 +20,10 @@ export enum PATHS {
   STORE_REFERRALS = "/store-referrals/",
   STORE_BALANCE = "/store-balance/",
   CONTACT_US = "/contact-us/",
+  INVOICE = "/invoices/",
+  ORDERS = "/orders/",
+  PAY = "/pay/",
+  FLUTTERWAVE = "/flutterwave/",
 }
 
 export type IDashboardMetrics = {
@@ -86,6 +90,16 @@ export type ICompletePaymentDetails = {
   customer: ICustomer;
   onSuccess?: () => {};
   onError?: () => {};
+};
+
+export type IPaymentFor = "order" | "subscription" | "store-build-ai";
+
+export type FlutterwaveResponse = {
+  status: "success";
+  message: string;
+  data: {
+    link: string;
+  };
 };
 
 export type LightingSceneProps = {
@@ -162,13 +176,25 @@ export type IProductTypes = {
   icon: string;
 };
 
+export type IStoreBankAccounts = {
+  _id?: string;
+  storeId: string;
+  accountNumber: string;
+  bankCode: string;
+  bankName: string;
+  accountName: string;
+  isDefault: boolean;
+  userId: string;
+  nin: string;
+} & ITimeStamp;
+
 export type IOtpValidator = {
   open?: boolean;
   header?: string;
   desc?: string;
   userEmail?: string;
   otpFor?: IOTPFor;
-  onSuccess?: () => void;
+  onSuccess?: (otp?: string) => void;
   onError?: () => void;
 };
 
@@ -245,7 +271,7 @@ export type IStoreTemplates =
   | "beauty"
   | "decoration";
 
-export type IOTPFor = "login" | "verify-email";
+export type IOTPFor = "login" | "verify-email" | "withdraw";
 
 export type ITimeStamp = {
   createdAt?: string;
@@ -395,6 +421,9 @@ export type IStore = {
     };
   };
   sections: ISection[];
+  lockedBalance?: number;
+  pendingBalance?: number;
+  balance?: number;
 } & ITimeStamp;
 
 export interface CollectionFormProps {
@@ -978,4 +1007,94 @@ export interface aiChatResponse extends ITimeStamp {
     _id: string;
   };
   __v: 0;
+}
+
+export interface Invoice {
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  orderNumber: string;
+  invoiceId: string;
+  dateIssued: string;
+  dateDue: string;
+  customerName: string;
+  customerPhone: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  status: string;
+  items: IProduct[];
+  shippingDetails: IShippingDetails;
+  storeCode: string;
+  txRef: string;
+}
+
+export interface FlutterwaveVirtualAccountResponse {
+  status: "success";
+  message: "Virtual account created";
+  data: {
+    response_code: string;
+    response_message: string;
+    flw_ref: string;
+    order_ref: string;
+    account_number: string;
+    account_status: "active" | "inactive";
+    frequency: 1;
+    bank_name: string;
+    created_at: string;
+    expiry_date: string;
+    note: string;
+    amount: string;
+  };
+}
+
+export interface IBank {
+  id: number;
+  name: string;
+  slug: string;
+  code: string;
+  longcode: string;
+  gateway: "emandate";
+  pay_with_bank: boolean;
+  supports_transfer: boolean;
+  active: boolean;
+  country: "Nigeria";
+  currency: "NGN";
+  type: string;
+  is_deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IDedicatedAccount {
+  accountRef: string;
+  accountDetails: {
+    accountNumber: string;
+    accountName: string;
+    bankName: string;
+  };
+  ref: string;
+  storeId: string;
+}
+
+export type ITransactionType =
+  | "Funding"
+  | "Withdrawal"
+  | "Refund"
+  | "Transfer"
+  | "Payment";
+export type IPaymentChannel = "balance" | "billStack" | "flutterwave";
+
+export interface ITransaction<T = any> extends ITimeStamp {
+  txRef: string;
+  paymentMethod: string;
+  amount: number;
+  paymentStatus: IPaymentStatus;
+  paymentFor: IPaymentFor;
+  _id?: string;
+  identifier: string;
+  meta?: T;
+  type: ITransactionType;
+  storeId: string;
+  paymentChannel: IPaymentChannel;
 }

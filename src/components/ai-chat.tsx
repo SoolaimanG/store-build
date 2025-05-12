@@ -24,6 +24,8 @@ import { EmptyProductState } from "./empty";
 import { Skeleton } from "./ui/skeleton";
 import { Text } from "./text";
 import { marked } from "marked";
+import queryString from "query-string";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -52,14 +54,18 @@ export function AIChat({
   type = "storeHelper",
   userId,
   aiName = `${appConfig.name} AI`,
+  message = "",
+  open = false,
 }: {
   children: ReactNode;
   type: "customerHelper" | "storeHelper";
   userId?: string;
   aiName?: string;
+  message?: string;
+  open?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
+  const [isOpen, setIsOpen] = useState(open);
+  const [input, setInput] = useState(message);
   const [showMentions, setShowMentions] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [mentions, setMentions] = useState<Mention[]>([]);
@@ -68,6 +74,8 @@ export function AIChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentStore: store, user } = useStoreBuildState();
+  const location = useLocation();
+  const n = useNavigate();
 
   const { isLoading, data, error } = useQuery({
     queryKey: ["ai-chats", isOpen],
@@ -122,7 +130,7 @@ export function AIChat({
           store?._id!,
           storeBuilder.generateSessionId!
         );
-      } else {
+      } else if (type === "storeHelper") {
         r = await storeBuilder.aiStoreAssistant(
           prompt || input,
           storeBuilder.generateSessionId
@@ -183,8 +191,21 @@ export function AIChat({
     inputRef.current?.focus();
   };
 
+  const handleSheetTrigger = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      const q = queryString.parse(location.search) as { timeRange: string };
+
+      const newQuery = queryString.stringify({
+        timeRange: q.timeRange || "all",
+      });
+
+      n(`${location.pathname}?${newQuery}`);
+    }
+  };
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={handleSheetTrigger}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
@@ -241,7 +262,9 @@ export function AIChat({
           </div>
         </ScrollArea>
         <div className="p-4 border-t flex flex-col space-y-1">
-          {input === "" && <ExplorePrompts setPrompt={setInput} />}
+          {input === "" && type === "storeHelper" && (
+            <ExplorePrompts setPrompt={setInput} />
+          )}
           <div className="flex flex-wrap gap-1 mb-2">
             {mentions.map((mention) => (
               <Badge
@@ -249,13 +272,12 @@ export function AIChat({
                 className="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-sm"
               >
                 {mention.name}
-                <button
-                  type="button"
+                <div
                   onClick={() => removeMention(mention.handle)}
                   className="ml-1 focus:outline-none"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </div>
               </Badge>
             ))}
           </div>
@@ -285,14 +307,14 @@ export function AIChat({
                   e.preventDefault();
                 }
               }}
-              className="pr-10 min-h-[40px] max-h-[200px] resize-none w-[91%] rounded-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="pr-10 min-h-[40px] max-h-[200px] resize-none w-[89%] md:w-[91%] rounded-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
             <Button
               type="submit"
               size="icon"
               disabled={isStreaming}
-              className="w-[9%] rounded-none"
+              className="md:w-[9%] w-[11%] rounded-none"
               variant="shine"
               style={{ background: store?.customizations?.theme?.primary }}
             >

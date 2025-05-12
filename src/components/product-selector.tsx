@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Drawer,
   DrawerContent,
@@ -51,12 +52,24 @@ export function ProductSelector({
   const [searchTerm, setSearchTerm] = useState("");
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: () => storeBuilder.getProducts(user?.storeId || ""),
   });
 
   const { data: products } = data || {};
+
+  const ProductSelectorSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex flex-col space-y-2">
+          <Skeleton className="w-full h-[17rem] rounded-md" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+      ))}
+    </div>
+  );
 
   const filteredProducts = products?.products?.filter((product) =>
     product.productName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,14 +110,18 @@ export function ProductSelector({
           />
         </div>
       </div>
-      <ScrollArea className={cn(!isDesktop && "flex-grow h-[450px]")}>
+      <ScrollArea
+        className={cn(!isDesktop && "flex-grow h-[450px]", "relative")}
+      >
         <div
           className={cn(
             "grid grid-cols-1 md:grid-cols-2 gap-4 p-4",
             !filteredProducts?.length && "flex items-center justify-center"
           )}
         >
-          {!filteredProducts?.length ? (
+          {isLoading ? (
+            <ProductSelectorSkeleton />
+          ) : !filteredProducts?.length ? (
             <EmptyProductState icon={PackageSearch}>
               <Button variant="ringHover" className="rounded-none" asChild>
                 <Link

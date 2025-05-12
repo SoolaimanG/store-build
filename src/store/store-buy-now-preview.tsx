@@ -60,6 +60,7 @@ import type {
   IProduct,
 } from "@/types";
 import { nigeriaStates } from "@/constants";
+import { OrderSuccess } from "./store-order-success";
 
 const formSchema = z.object({
   fullName: z.string().optional(),
@@ -91,10 +92,15 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
   products: initialProducts,
   disableQuantityIncrement,
 }) => {
-  const { currentStore: store, setOrderPlaced } = useStoreBuildState();
+  const {
+    currentStore: store,
+    setOrderPlaced,
+    orderPlaced,
+  } = useStoreBuildState();
   const [products, setProducts] = React.useState(initialProducts);
   const [isOpen, setIsOpen] = React.useState(false);
   const isMobile = useMediaQuery("(max-width:767px)");
+  const [orderSuccess, setOrderSuccess] = React.useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -213,7 +219,20 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
 
   const onSubmit = async (values: FormValues) => {
     try {
+      const modifiedProducts = products.flatMap((product) =>
+        Array(product.quantity)
+          .fill(null)
+          .map(() => ({
+            ...product,
+            productId: product._id || "",
+            color: product.color,
+            size: product.size,
+            quantity: product.quantity,
+          }))
+      );
+
       const order: Partial<IOrder> = {
+        ...values,
         customerDetails: {
           email: values.email,
           name: values.fullName || store?.storeName || "",
@@ -227,21 +246,26 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
             country: values.country || "",
           },
         },
-        products,
+        products: modifiedProducts,
         deliveryType: (values.delivery as IDeliveryType) || "waybill",
         note: values.notes,
+        storeId: store?._id!,
       };
 
-      const res = await storeBuilder.createOrder(order, store?._id);
-      setOrderPlaced(res.data);
+      const {
+        data: newOrder,
+        message = "ORDER_CREATION_SUCCESS: Your order has been placed and is being processed.",
+      } = await storeBuilder.createOrder(order, store?._id);
+      setOrderPlaced(newOrder);
+      setOrderSuccess(true);
       toast({
         title: "Order placed successfully",
-        description: "Your order has been placed and is being processed.",
+        description: message,
       });
-      setIsOpen(false);
     } catch (error) {
       const { status: title, message: description } =
         errorMessageAndStatus(error);
+      setOrderSuccess(false);
       toast({
         title,
         description,
@@ -313,7 +337,6 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
                         className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
                         type="email"
                         placeholder="Enter your email"
-                        required
                       />
                     </FormControl>
                     <FormMessage />
@@ -332,7 +355,6 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
                         className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
                         type="tel"
                         placeholder="Enter your phone number"
-                        required
                       />
                     </FormControl>
                     <FormMessage />
@@ -360,159 +382,152 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
             </div>
           </div>
           <div className={cn("w-full")}>
-            {!allProductsAreDigital(products) && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="addressLine1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 1</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
-                          placeholder="Enter your address"
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
-                          placeholder="Enter your city"
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={deliveryIntegrationLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select state" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {states?.map((state) => (
-                            <SelectItem
-                              key={state}
-                              value={state}
-                              className="capitalize"
-                            >
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="postalCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
-                          placeholder="Enter your postal code"
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select country" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="nigeria">Nigeria</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {!allProductsAreDigital(products) && (
-                  <FormField
-                    control={form.control}
-                    name="delivery"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Delivery</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select delivery" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="waybill">Way Bill</SelectItem>
-                            <SelectItem value="pick_up">Pick Up</SelectItem>
-                            {deliveryIntegrationData?.data.integration
-                              .isConnected && (
-                              <SelectItem
-                                disabled={deliveryIntegrationLoading}
-                                value="sendbox"
-                              >
-                                Send Box
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="addressLine1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address Line 1</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+                        placeholder="Enter your address"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
-            )}
+              />
+
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+                        placeholder="Enter your city"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={deliveryIntegrationLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {states?.map((state) => (
+                          <SelectItem
+                            key={state}
+                            value={state}
+                            className="capitalize"
+                          >
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="postalCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Postal Code</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="ring-0 focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0"
+                        placeholder="Enter your postal code"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="nigeria">Nigeria</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="delivery"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Delivery</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select delivery" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="waybill">Way Bill</SelectItem>
+                        <SelectItem value="pick_up">Pick Up</SelectItem>
+                        {deliveryIntegrationData?.data.integration
+                          .isConnected && (
+                          <SelectItem
+                            disabled={deliveryIntegrationLoading}
+                            value="sendbox"
+                          >
+                            Send Box
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
         <div className="flex flex-col gap-2 mt-3">
@@ -590,7 +605,7 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
           >
             <Button
               type="submit"
-              style={{ background: store?.customizations?.theme.primary }}
+              style={{ background: store?.customizations?.theme?.primary }}
               className="w-full"
               size="lg"
               disabled={form.formState.isSubmitting || form.formState.isLoading}
@@ -611,7 +626,18 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
           <DrawerHeader>
             <DrawerTitle>Order Details</DrawerTitle>
           </DrawerHeader>
-          <ScrollArea className="px-4 pb-4 h-[80vh]">{OrderContent}</ScrollArea>
+          <ScrollArea
+            className={cn(!orderSuccess ? "px-4 pb-4 h-[80vh]" : "h-fit py-4")}
+          >
+            {orderSuccess ? (
+              <OrderSuccess
+                {...orderPlaced!}
+                onClose={() => setIsOpen(false)}
+              />
+            ) : (
+              OrderContent
+            )}
+          </ScrollArea>
         </DrawerContent>
       </Drawer>
     );
@@ -624,13 +650,18 @@ export const BuyNowPreview: React.FC<IBuyNowPreviewProps> = ({
         aria-keyshortcuts="off"
         className={cn(
           "max-w-5xl max-h-[90vh] overflow-y-auto",
-          allProductsAreDigital(products) && "max-w-xl"
+          allProductsAreDigital(products) && "max-w-xl",
+          orderPlaced && "md:max-w-lg"
         )}
       >
         <DialogHeader>
           <DialogTitle>Order Details</DialogTitle>
         </DialogHeader>
-        {OrderContent}
+        {orderSuccess ? (
+          <OrderSuccess onClose={() => setIsOpen(false)} {...orderPlaced!} />
+        ) : (
+          OrderContent
+        )}
       </DialogContent>
     </Dialog>
   );

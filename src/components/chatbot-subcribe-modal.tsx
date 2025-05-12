@@ -81,7 +81,7 @@ export default function ChatbotSubscriptionModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-[85%] md:max-w-4xl p-0 rounded-lg sm:rounded-xl flex flex-col h-[95vh] sm:h-auto sm:max-h-[90vh]">
+      <DialogContent className="max-w-[100%] md:max-w-4xl p-0 rounded-lg sm:rounded-xl flex flex-col h-[100vh] sm:h-auto sm:max-h-[90vh]">
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-2 sm:p-3 flex-none">
           <DialogHeader className="mb-2 space-y-4">
             <div className="flex items-center justify-between">

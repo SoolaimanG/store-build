@@ -68,6 +68,7 @@ export function EditCustomerInfo({
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className="h-[3rem]"
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -78,11 +79,12 @@ export function EditCustomerInfo({
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="h-[3rem]"
           />
         </div>
       </div>
       <div className="flex justify-end">
-        <Button disabled={isPending} type="submit">
+        <Button variant="ringHover" disabled={isPending} type="submit">
           Save changes
         </Button>
       </div>

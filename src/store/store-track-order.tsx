@@ -8,34 +8,25 @@ import { useStoreBuildState } from ".";
 import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { menu } from "@/constants";
+import { PATHS } from "@/types";
 
 export default function StoreTrackOrder() {
   const { currentStore: store } = useStoreBuildState();
-  const [trackingCode, setTrackingCode] = useState("");
-  const [isPending, startTransition] = useState(false);
+  const [orderId, setOrderId] = useState("");
   const n = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      startTransition(true);
-      // Handle form submission
-      const res = await storeBuilder.getOrder(trackingCode, store?._id);
-      !res.data.order &&
-        toast({ title: res.status.toUpperCase(), description: res.message });
-      n(menu(store?.storeCode!)[3].path + res.data.order._id!);
-    } catch (error) {
-      const { status: title, message: description } =
-        errorMessageAndStatus(error);
+
+    if (!orderId) {
       toast({
-        title,
-        description,
+        title: "Order ID is required",
+        description: "Please enter your order ID",
         variant: "destructive",
       });
-    } finally {
-      startTransition(false);
+      return;
     }
+    n(PATHS.ORDERS + orderId);
   };
 
   return (
@@ -58,8 +49,8 @@ export default function StoreTrackOrder() {
             <Input
               id="tracking-code"
               type="text"
-              value={trackingCode}
-              onChange={(e) => setTrackingCode(e.target.value)}
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
               placeholder="1234567890"
               className="h-12 text-lg focus-visible:ring-0 focus-visible:ring-inset focus-visible:ring-offset-0"
               required
@@ -70,7 +61,7 @@ export default function StoreTrackOrder() {
             By continuing, I represent that I have read, understand, and fully
             agree to the {store?.storeName}{" "}
             <Link
-              style={{ color: store?.customizations?.theme.primary }}
+              style={{ color: store?.customizations?.theme?.primary }}
               to="/terms"
             >
               terms of service
@@ -78,7 +69,7 @@ export default function StoreTrackOrder() {
             and{" "}
             <Link
               to="/privacy"
-              style={{ color: store?.customizations?.theme.primary }}
+              style={{ color: store?.customizations?.theme?.primary }}
             >
               privacy policy
             </Link>
@@ -87,11 +78,9 @@ export default function StoreTrackOrder() {
 
           <Button
             type="submit"
-            disabled={isPending}
-            style={{ background: store?.customizations?.theme.primary }}
+            style={{ background: store?.customizations?.theme?.primary }}
             className="w-full h-12 text-base font-medium text-white gap-2"
           >
-            {isPending && <Loader2 size={18} className=" animate-spin" />}
             CONTINUE
           </Button>
         </form>

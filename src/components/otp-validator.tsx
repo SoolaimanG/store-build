@@ -45,6 +45,7 @@ const OtpValidator: FC = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof otpSchema>) => {
+    const { onSuccess = () => {} } = openOTPValidator;
     setIsSubmitting(true);
     try {
       await storeBuilder.verifyOTP(
@@ -53,10 +54,8 @@ const OtpValidator: FC = () => {
         openOTPValidator.otpFor
       );
 
-      form.resetField("pin");
-
       setOpenOTPValidator({ ...openOTPValidator, open: false });
-      openOTPValidator.onSuccess && openOTPValidator.onSuccess();
+      onSuccess(values.pin);
     } catch (error) {
       const _error = errorMessageAndStatus(error);
       toast({
@@ -66,6 +65,7 @@ const OtpValidator: FC = () => {
       });
       openOTPValidator.onError && openOTPValidator.onError();
     } finally {
+      form.resetField("pin");
       setIsSubmitting(false);
     }
   };

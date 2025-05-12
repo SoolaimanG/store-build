@@ -27,9 +27,7 @@ const StoreCategories: FC<{ categories: ICategory[]; isLoading: boolean }> = ({
         <header className="w-full flex items-center justify-center flex-col gap-2">
           <h2 className="text-4xl">Our Collections</h2>
           <Text className="text-center">
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Ipsa eum
-            cumque tempora accusantium magni ea minima officiis ducimus, harum
-            maxime deleniti
+            These are the categories that we have available for you.
           </Text>
         </header>
         <div>
@@ -78,7 +76,7 @@ const StoreCategories: FC<{ categories: ICategory[]; isLoading: boolean }> = ({
                           asChild
                           style={{
                             backgroundColor:
-                              currentStore?.customizations?.theme.primary,
+                              currentStore?.customizations?.theme?.primary,
                           }}
                           variant="outline"
                           className="text-white hover:bg-white hover:text-white transition-colors duration-300 border-0 rounded-full w-fit px-6"

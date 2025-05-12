@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, Fragment, useState } from "react";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -241,7 +241,7 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
             value="deliveryLocations"
             className="text-sm md:text-base"
           >
-            Delivery Locations
+            Locations
           </TabsTrigger>
         )}
         {store?.customizations?.productPage.showReviews && (
@@ -308,7 +308,7 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-5 h-5 ${
+                        className={`md:w-5 md:h-5 h-3 w-3 ${
                           i < Math.floor(product.averageRating || 1)
                             ? "fill-yellow-400 text-yellow-400"
                             : "fill-gray-200 text-gray-200"
@@ -316,8 +316,7 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
                       />
                     ))}
                   </div>
-                  <span className="font-semibold">{4}</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground truncate">
                     ({product.totalReviews || 0} reviews)
                   </span>
                   <WriteReviewOnProduct product={product}>
@@ -345,7 +344,7 @@ const ProductDetailsTab: FC<{ product: IProduct }> = ({ product }) => {
                     <WriteReviewOnProduct product={product}>
                       <Button
                         style={{
-                          background: store?.customizations?.theme.primary,
+                          background: store?.customizations?.theme?.primary,
                         }}
                       >
                         Write Review
@@ -367,15 +366,15 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
   store,
 }) => {
   const [selectedSize, setSelectedSize] = useState(
-    product?.availableSizes[0] || ""
+    product?.availableSizes?.[0] || ""
   );
   const [selectedColor, setSelectedColor] = useState(
-    product?.availableColors[0].name || ""
+    product?.availableColors?.[0]?.name || ""
   );
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState({
     idx: 0,
-    type: product?.media[0]?.mediaType,
+    type: product?.media?.[0]?.mediaType,
   });
 
   const [isHovered, setIsHovered] = useState(0);
@@ -390,7 +389,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
   const removeItemFromCart = () => {
     setCart({
       ...cart,
-      [store.storeCode]: currentCart.filter(
+      [store.storeCode]: currentCart?.filter(
         (cart) =>
           cart.productId !== product._id ||
           cart.color !== selectedColor ||
@@ -459,57 +458,40 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
       <div className="grid md:grid-cols-2 gap-8">
         {/* Product Images */}
         <div className="">
-          <div className="relative h-[30rem]">
-            <div className="absolute inset-0 bg-gray-100 h-fit rounded-lg overflow-hidden">
+          <div className="relative md:h-[30rem] h-[25rem]">
+            <div className="absolute bg-gray-100 h-fit rounded-lg overflow-hidden">
               {currentImageIndex.type === "image" ? (
                 <Img
-                  src={
-                    product?.media[currentImageIndex.idx].url ||
-                    "/placeholder.svg"
-                  }
+                  src={product?.media[currentImageIndex.idx].url}
                   alt={
                     product?.media[currentImageIndex.idx].altText ||
                     product?.productName
                   }
-                  className="object-cover w-full h-fit"
+                  className="w-full h-fit"
                 />
               ) : (
                 <video src={product?.media[currentImageIndex.idx].url} />
               )}
-              <button className="absolute top-1/2 left-4 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg">
-                <span className="sr-only">Previous</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <button className="absolute top-1/2 right-4 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg">
-                <span className="sr-only">Next</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
+              {product?.media?.length > 1 && (
+                <Fragment>
+                  <Button
+                    size="icon"
+                    className="absolute top-1/2 left-4 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg"
+                    style={{ background: store.customizations?.theme?.primary }}
+                  >
+                    <ChevronLeft size={19} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    className="absolute top-1/2 right-4 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg"
+                    style={{ background: store.customizations?.theme?.primary }}
+                  >
+                    <ChevronRight size={19} />
+                  </Button>
+                </Fragment>
+              )}
               {currentImageIndex.type === "video" && (
-                <button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/80 rounded-full p-4">
+                <Button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/80 rounded-full p-4">
                   <span className="sr-only">Play video</span>
                   <svg
                     className="w-6 h-6"
@@ -518,29 +500,30 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
                   >
                     <path d="M8 5v14l11-7z" />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 mt-3 gap-4">
             {product?.media.map((m, idx) => (
-              <button
+              <div
+                role="button"
                 key={idx}
                 onClick={() => setCurrentImageIndex({ idx, type: m.mediaType })}
                 style={{
                   borderColor:
                     currentImageIndex.idx === idx
-                      ? store.customizations?.theme.primary
+                      ? store.customizations?.theme?.primary
                       : "",
                 }}
-                className={`relative aspect-square rounded-lg border-2 overflow-hidden`}
+                className={`relative mt-6 md:mt-12 aspect-square rounded-lg border-2 overflow-hidden`}
               >
                 <Img
-                  src={m.url || "/placeholder.svg"}
+                  src={m.url}
                   alt={`Product thumbnail ${idx + 1}`}
                   className="object-cover h-full"
                 />
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -550,7 +533,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
           <div className="flex justify-between items-start">
             <div>
               <Badge
-                style={{ background: store?.customizations?.theme.primary }}
+                style={{ background: store?.customizations?.theme?.primary }}
                 className="mb-2"
               >
                 New Arrival
@@ -569,7 +552,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {[...Array(product.averageRating)].map((_, i) => (
+            {[...Array(product?.averageRating || 0)].map((_, i) => (
               <svg
                 key={i}
                 className="w-4 h-4 fill-yellow-400"
@@ -654,10 +637,10 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
                   onMouseEnter={() => setIsHovered(2)}
                   onMouseLeave={() => setIsHovered(0)}
                   style={{
-                    borderColor: store?.customizations?.theme.primary,
+                    borderColor: store?.customizations?.theme?.primary,
                     background:
                       isHovered === 2
-                        ? store?.customizations?.theme.primary
+                        ? store?.customizations?.theme?.primary
                         : "",
                   }}
                 >
@@ -669,10 +652,10 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
                   onMouseEnter={() => setIsHovered(3)}
                   onMouseLeave={() => setIsHovered(0)}
                   style={{
-                    borderColor: store?.customizations?.theme.primary,
+                    borderColor: store?.customizations?.theme?.primary,
                     background:
                       isHovered === 3
-                        ? store?.customizations?.theme.primary
+                        ? store?.customizations?.theme?.primary
                         : "",
                   }}
                   onClick={() => setQuantity(quantity + 1)}
@@ -689,7 +672,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
               </div>
               <div className="flex justify-between text-sm">
                 <span>Arrival</span>
-                <span>28 Oct 2022</span>
+                <span>5 days after order</span>
               </div>
             </div>
 
@@ -703,9 +686,11 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
                 onMouseEnter={() => setIsHovered(1)}
                 onMouseLeave={() => setIsHovered(0)}
                 style={{
-                  borderColor: store?.customizations?.theme.primary,
+                  borderColor: store?.customizations?.theme?.primary,
                   background:
-                    isHovered === 1 ? store?.customizations?.theme.primary : "",
+                    isHovered === 1
+                      ? store?.customizations?.theme?.primary
+                      : "",
                 }}
                 onClick={addItemToCart}
                 className="flex-1 h-12 text-lg"
@@ -724,7 +709,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
                 ]}
               >
                 <Button
-                  style={{ background: store?.customizations?.theme.primary }}
+                  style={{ background: store?.customizations?.theme?.primary }}
                   className="flex-1 h-12 text-lg"
                 >
                   Buy Now
@@ -736,7 +721,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
       </div>
 
       {/* Promo Banner */}
-      <div className="mt-8">
+      {/*<div className="mt-8">
         <Card className="relative overflow-hidden">
           <Img
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Stella-Premium-Clothing-Marketplace-by-Dipa-UI-UX-for-Dipa-Inhouse-on-Dribbble-01-21-2025_01_06_AM-l3TYQ4UGjH7lTi5aPCgT1wPNB4BGlI.png"
@@ -753,7 +738,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
             <Badge variant="destructive">30% OFF</Badge>
           </div>
         </Card>
-      </div>
+      </div>*/}
 
       {/* Product Details Tabs */}
       <ProductDetailsTab product={product} />
@@ -764,9 +749,9 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
             onMouseEnter={() => setIsHovered(1)}
             onMouseLeave={() => setIsHovered(0)}
             style={{
-              borderColor: store?.customizations?.theme.primary,
+              borderColor: store?.customizations?.theme?.primary,
               background:
-                isHovered === 1 ? store?.customizations?.theme.primary : "",
+                isHovered === 1 ? store?.customizations?.theme?.primary : "",
             }}
             onClick={addItemToCart}
             className="flex-1"
@@ -785,7 +770,7 @@ const ProductPageOne: FC<{ product: IProduct; store: IStore }> = ({
             ]}
           >
             <Button
-              style={{ background: store?.customizations?.theme.primary }}
+              style={{ background: store?.customizations?.theme?.primary }}
               className="flex-1"
             >
               Buy Now
@@ -914,8 +899,9 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
             {/* Desktop Thumbnails */}
             <div className="hidden md:grid grid-cols-4 gap-4">
               {product.media.map((m, idx) => (
-                <button
+                <div
                   key={idx}
+                  style={{ borderColor: store?.customizations?.theme?.primary }}
                   onClick={() =>
                     setCurrentImageIndex({ idx, type: m.mediaType })
                   }
@@ -930,14 +916,14 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
                     alt={`Product thumbnail ${idx + 1}`}
                     className="object-cover"
                   />
-                </button>
+                </div>
               ))}
             </div>
 
             {/* Mobile Image Indicators */}
             <div className="flex justify-center space-x-2 md:hidden">
               {product.media.map((_, idx) => (
-                <button
+                <Button
                   key={idx}
                   onClick={() =>
                     setCurrentImageIndex({ idx, type: _.mediaType })
@@ -1025,7 +1011,7 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
                   </label>
                   <div className="flex gap-2 mt-2">
                     {product.availableColors.map((color) => (
-                      <button
+                      <Button
                         onClick={() => setSelectedColor(color.name)}
                         style={{ background: color.colorCode }}
                         key={color.name}
@@ -1035,7 +1021,7 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
                         )}
                       >
                         <span className="sr-only">{color.name}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -1052,9 +1038,9 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
                   style={{
-                    borderColor: store?.customizations?.theme.primary,
+                    borderColor: store?.customizations?.theme?.primary,
                     background: isHovered
-                      ? store?.customizations?.theme.primary
+                      ? store?.customizations?.theme?.primary
                       : "",
                   }}
                   onClick={addItemToCart}
@@ -1074,7 +1060,7 @@ const ProductPageTwo: FC<{ product: IProduct; store: IStore }> = ({
                   ]}
                 >
                   <Button
-                    style={{ background: store.customizations?.theme.primary }}
+                    style={{ background: store.customizations?.theme?.primary }}
                     className="h-12 w-[60%]"
                   >
                     Buy Now
@@ -1241,27 +1227,27 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                 className="object-cover w-full"
               />
               <div
-                style={{ background: store.customizations?.theme.secondary }}
+                style={{ background: store.customizations?.theme?.secondary }}
                 className="absolute top-4 left-4  backdrop-blur-sm rounded-full px-2 py-1 text-sm"
               >
                 0{currentImageIndex.idx + 1}/0{product.media.length}
               </div>
               {product.media.length > 1 && (
-                <button
+                <Button
                   onClick={() =>
                     setCurrentImageIndex({
                       ...currentImageIndex,
                       idx: Math.min(1, currentImageIndex.idx - 1),
                     })
                   }
-                  style={{ background: store.customizations?.theme.secondary }}
+                  style={{ background: store.customizations?.theme?.secondary }}
                   className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full p-2 shadow-lg"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                </button>
+                </Button>
               )}
               {product.media.length > 1 && (
-                <button
+                <Button
                   onClick={() =>
                     setCurrentImageIndex({
                       ...currentImageIndex,
@@ -1271,11 +1257,11 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                       ),
                     })
                   }
-                  style={{ background: store.customizations?.theme.secondary }}
+                  style={{ background: store.customizations?.theme?.secondary }}
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg"
                 >
                   <ChevronRight className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
 
@@ -1385,7 +1371,7 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                   <h3 className="text-lg font-semibold mb-3">Select Color</h3>
                   <div className="flex flex-wrap gap-3">
                     {product.availableColors.map((color) => (
-                      <button
+                      <Button
                         onClick={() => setSelectedColor(color.name)}
                         key={color.name}
                         style={{ background: color.colorCode }}
@@ -1396,7 +1382,7 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                         )}
                       >
                         <span className="sr-only">{color.name}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -1417,9 +1403,9 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                 onMouseLeave={() => setIsHovered(false)}
                 style={{
                   background: isHovered
-                    ? store.customizations?.theme.primary
+                    ? store.customizations?.theme?.primary
                     : "",
-                  borderColor: store.customizations?.theme.primary,
+                  borderColor: store.customizations?.theme?.primary,
                 }}
                 onClick={addItemToCart}
               >
@@ -1436,7 +1422,7 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
                 ]}
               >
                 <Button
-                  style={{ background: store.customizations?.theme.primary }}
+                  style={{ background: store.customizations?.theme?.primary }}
                   className="flex-1 h-12"
                 >
                   Buy Now
@@ -1459,8 +1445,8 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{
-              background: isHovered ? store.customizations?.theme.primary : "",
-              borderColor: store.customizations?.theme.primary,
+              background: isHovered ? store.customizations?.theme?.primary : "",
+              borderColor: store.customizations?.theme?.primary,
             }}
             onClick={addItemToCart}
           >
@@ -1477,7 +1463,7 @@ const ProductPageThree: FC<{ product: IProduct; store: IStore }> = ({
             ]}
           >
             <Button
-              style={{ background: store.customizations?.theme.primary }}
+              style={{ background: store.customizations?.theme?.primary }}
               className="flex-1"
               size="lg"
             >
@@ -1495,7 +1481,7 @@ export default function StoreProductsDetails() {
 
   const { currentStore: store } = useStoreBuildState();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["products", productId],
     queryFn: () => storeBuilder.getProduct(productId!),
   });

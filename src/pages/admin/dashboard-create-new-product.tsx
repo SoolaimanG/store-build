@@ -120,7 +120,7 @@ const ProductManagement = () => {
   const [images, setImages] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [newColor, setNewColor] = useState({ name: "", hex: "#E41515" });
+  const [newColor, setNewColor] = useState({ name: "", hex: "" });
 
   const { data, error } = useQuery({
     queryKey: ["product", productId],
@@ -223,11 +223,22 @@ const ProductManagement = () => {
   const regions = Array.from(new Set(r?.shippingRegions || []));
 
   const onSubmit = async (isActive = true) => {
+    setIsUploading(true);
     const values = form.getValues();
+
+    if (values.isDigital) {
+      toast({
+        title: "ERROR",
+        description: "Digital products are currently disabled",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       let imgs: string[] = [...images];
 
+      //This will upload all the media files
       for (const file of files) {
         const res = await uploadImage(file);
         imgs = [...imgs, res.data.display_url];
@@ -300,12 +311,13 @@ const ProductManagement = () => {
       });
     } catch (error) {
       const err = errorMessageAndStatus(error);
-      console.error(error);
       toast({
         title: err.status,
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -414,14 +426,14 @@ const ProductManagement = () => {
   useToastError(regionsError || categoriesError || error);
 
   return (
-    <Section className="max-w-7xl mx-auto p-6 md:p-0">
+    <Section className="md:max-w-7xl mx-auto p-6 md:p-0 mb-6">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex items-center justify-between gap-3 mb-8"
       >
-        <h2 className="text-4xl line-clamp-1">
+        <h2 className="md:text-2xl text-xl line-clamp-1">
           {isEditingMode ? `Edit Product ${productId}` : "Add New Product"}
         </h2>
         <div className="flex items-center gap-2">

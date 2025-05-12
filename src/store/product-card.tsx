@@ -55,7 +55,7 @@ const ProductCard: FC<
             ]}
           >
             <Button
-              style={{ backgroundColor: customizations?.theme.primary }}
+              style={{ backgroundColor: customizations?.theme?.primary }}
               size="sm"
               className="rounded-sm gap-2 group/2 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
             >
@@ -108,11 +108,11 @@ const ProductCard: FC<
               onMouseLeave={() => setIsHovered(false)}
               style={{
                 backgroundColor: isHovered
-                  ? customizations?.theme.primary
+                  ? customizations?.theme?.primary
                   : isGridDisplay
-                  ? customizations?.theme.primary
+                  ? customizations?.theme?.primary
                   : "",
-                borderColor: customizations?.theme.primary,
+                borderColor: customizations?.theme?.primary,
               }}
               variant={isGridDisplay ? "default" : "outline"}
               className={cn(

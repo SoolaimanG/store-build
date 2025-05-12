@@ -89,13 +89,14 @@ const SubscribeWindow = () => {
   const handleInitializeSubscription = async () => {
     try {
       startTransition(true);
-      const res = await storeBuilder.initializeChargeForSubscription(
-        reminderEnabled,
-        months
-      );
-      toast({ title: "SUCCESS", description: res.message });
+      const { data, message } = await storeBuilder.createCharge({
+        paymentFor: "subscription",
+        paymentOption: "card",
+        meta: { months, isReminderSet: reminderEnabled },
+      });
+      toast({ title: "SUCCESS", description: message });
 
-      window.open(res.data.data.authorization_url, "_blank");
+      window.open(data.paymentLink, "_blank");
     } catch (error) {
       const { status: title, message: description } =
         errorMessageAndStatus(error);
