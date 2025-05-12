@@ -378,7 +378,7 @@ export function ManageIntegration({
 
   const renderIntegrationOptions = () => {
     switch (integration.id) {
-      case "paystack":
+      case "flutterwave":
         return (
           <div className="">
             <Form {...form}>

@@ -71,21 +71,23 @@ const DashBoardNavBar = () => {
               variant="ringHover"
               className="rounded-full bg-slate-800"
             >
-              <Menu />
+              <Menu className="w-5 h-5 md:w-7 md:h-7" />
             </Button>
           </MobileNavBar>
         )}
-        <Logo path={location.href} className="text-xl" />
+        <Logo path={location.href} className="md:text-xl text-base" />
       </div>
-      <div className="flex items-center md:gap-3 gap-2">
+      <div className="flex items-center md:gap-3 gap-0">
         {balanceUI}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
+              size="sm"
               variant="outline"
-              className="gap-2 border-1 border rounded-full"
+              className="gap-2 border-1 sm:px-3 h-8 md:h-9 border rounded-full"
             >
-              <ZapIcon size={16} /> Actions <ChevronDown size={16} />
+              <ZapIcon size={16} className="md:flex hidden" /> Actions{" "}
+              <ChevronDown size={16} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 rounded-2xl">

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Mail,
   Phone,
@@ -28,11 +26,15 @@ import AddPhoneNumber from "./add-phone-number";
 import { useQuery } from "@tanstack/react-query";
 import { useToastError } from "@/hooks/use-toast-error";
 import AddBankAccount from "./add-bank-account";
+import { useState } from "react";
 
 export function ProfileCompletionCarousel() {
   const { setOpenOTPValidator } = useStoreBuildState();
   const { user } = useAuthentication(undefined, 3000);
+  const [isPending, startTransition] = useState(false);
+
   const sendVerificationCode = async () => {
+    startTransition(true);
     try {
       const res = await storeBuilder.sendOTP("verify-email", user?.email!);
       setOpenOTPValidator({
@@ -51,6 +53,8 @@ export function ProfileCompletionCarousel() {
         description,
         variant: "destructive",
       });
+    } finally {
+      startTransition(false);
     }
   };
 
@@ -108,6 +112,7 @@ export function ProfileCompletionCarousel() {
                       </CardContent>
                       <CardFooter className="flex justify-end items-end py-0 mt-0">
                         <Button
+                          disabled={isPending}
                           variant="ringHover"
                           onClick={sendVerificationCode}
                         >

@@ -57,9 +57,22 @@ export type btnVariant =
   | "linkHover2";
 
 export type IIntegrationType = {
-  name: string;
-  settings: Record<string, any>;
   isConnected: boolean;
+  name: string;
+  settings?:
+    | IChatBotIntegration
+    | IDeliveryIntegration
+    | IUnsplashIntegration
+    | IPaymentIntegration;
+  apiKeys?: {
+    accessKey?: string;
+    token?: string;
+  };
+  subcription?: {
+    comment?: string;
+    start_date: string;
+    end_date: string;
+  };
 };
 
 export type IFilter = {

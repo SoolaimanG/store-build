@@ -26,6 +26,7 @@ import { PATHS } from "@/types";
 import ChatbotSubscriptionModal from "@/components/chatbot-subcribe-modal";
 import { useStoreBuildState } from "@/store";
 import { useDocumentTitle } from "@uidotdev/usehooks";
+import { useCallback } from "react";
 
 const integrations = [
   {
@@ -37,10 +38,10 @@ const integrations = [
     connected: true,
   },
   {
-    id: "paystack",
-    name: "PayStack",
+    id: "flutterwave",
+    name: "Flutterwave",
     description:
-      "Work faster and smarter by integrating directly with PayStack, right in the app.",
+      "For users to make payments for their store and receive payments",
     icon: CreditCard,
     connected: true,
   },
@@ -79,6 +80,34 @@ export default function DashboardIntegrations() {
   useToastError(error);
 
   useDocumentTitle("Integrations");
+
+  const showSubcriptionModal = useCallback(
+    (integrationId: string) => {
+      const _ = new Set(["chatbot"]);
+
+      if (_.has(integrationId)) {
+        const chatbotIntegration = data?.data?.find(
+          (integration) => integration.integration.name === "chatbot"
+        );
+
+        if (!chatbotIntegration) return true;
+
+        // If there's no subscription data, show the modal
+        if (!chatbotIntegration.integration.subcription?.end_date) {
+          return true;
+        }
+
+        const now = new Date();
+        const expirationDate = new Date(
+          chatbotIntegration.integration.subcription.end_date
+        );
+
+        // Check if the subscription has expired
+        return now > expirationDate;
+      }
+    },
+    [data?.data]
+  );
 
   const _integrations = integrations?.map((integration) => ({
     ...integration,
@@ -163,7 +192,7 @@ export default function DashboardIntegrations() {
                           Manage Integration
                         </Button>
                       </ManageIntegration>
-                    ) : integration.id === "chatbot" ? (
+                    ) : showSubcriptionModal(integration.id) ? (
                       <ChatbotSubscriptionModal
                         onDismiss={() => {}}
                         onSubscribe={() => {}}
