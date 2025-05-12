@@ -49,7 +49,7 @@ export function EditShipping({
             },
           },
         },
-        true
+        order.customerDetails.phoneNumber
       );
 
       onClose();

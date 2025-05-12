@@ -44,11 +44,7 @@ const Withdraw: FC<{ children: ReactNode }> = ({ children }) => {
   const [amount, setAmount] = useState(0);
   const [isPending, startTransition] = useState(false);
 
-  const {
-    isLoading,
-    data = [],
-    error,
-  } = useQuery({
+  const { data = [] } = useQuery({
     queryKey: ["get-store-accouns", isOpen],
     queryFn: async () =>
       (await storeBuilder.getStoreBank(user?.storeCode!, true)).data,

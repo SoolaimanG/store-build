@@ -33,7 +33,7 @@ export function EditCustomerInfo({
             name,
           },
         },
-        true
+        order.customerDetails.phoneNumber
       );
 
       onClose();

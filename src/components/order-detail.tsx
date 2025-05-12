@@ -96,10 +96,11 @@ const OrderDetails: FC<
   const requestCancelOrder = async () => {
     try {
       startTransition(true);
-      const res = await storeBuilder.requestCancelOrder(
-        order._id!,
-        store?._id!
-      );
+      const res = await storeBuilder.requestCancelOrder(order._id!, {
+        phoneNumber: order.customerDetails.phoneNumber,
+        reason: "",
+        storeId: order.storeId,
+      });
 
       toast({
         title: "SUCCESS",

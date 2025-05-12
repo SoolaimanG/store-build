@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useStoreBuildState } from ".";
-import { errorMessageAndStatus, storeBuilder } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 import { PATHS } from "@/types";
 
 export default function StoreTrackOrder() {

@@ -42,11 +42,7 @@ const DashboardBalance = () => {
     enabled: Boolean(user?.storeCode),
   });
 
-  const {
-    isLoading,
-    data: _data,
-    error: internalTransactionError,
-  } = useQuery({
+  const { data: _data, error: internalTransactionError } = useQuery({
     queryKey: [],
     queryFn: async () => (await storeBuilder.getInternalTransactions()).data,
   });

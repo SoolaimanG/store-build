@@ -1481,7 +1481,7 @@ export default function StoreProductsDetails() {
 
   const { currentStore: store } = useStoreBuildState();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["products", productId],
     queryFn: () => storeBuilder.getProduct(productId!),
   });
